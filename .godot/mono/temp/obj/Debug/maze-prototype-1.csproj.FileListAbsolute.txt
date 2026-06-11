@@ -15,3 +15,4 @@
 /home/user13/gamedev/maze-prototype-1/.godot/mono/temp/obj/Debug/maze-prototype-1.pdb
 /home/user13/gamedev/maze-prototype-1/.godot/mono/temp/obj/Debug/maze-prototype-1.genruntimeconfig.cache
 /home/user13/gamedev/maze-prototype-1/.godot/mono/temp/obj/Debug/ref/maze-prototype-1.dll
+/home/user13/gamedev/maze-prototype-1/.godot/mono/temp/obj/Debug/maze-prototype-1.sourcelink.json

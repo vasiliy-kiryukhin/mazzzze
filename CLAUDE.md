@@ -8,20 +8,63 @@ A Godot 4.6 3D maze game prototype using C# (.NET 8.0) with the Jolt Physics eng
 
 ## Build & Run
 
+The Godot 4.6.3 mono editor lives at:
+`/home/user13/Apps/Godot_v4.6.3-stable_mono_linux_x86_64/Godot_v4.6.3-stable_mono_linux.x86_64`
+
 ```bash
-# Build the C# project
+# 0. Build the C# project (MUST run after any .cs change before launching Godot)
 dotnet build
+dotnet build -c ExportRelease          # release configuration
 
-# Build release configuration
-dotnet build -c ExportRelease
+# Convenience handle used in the examples below
+GODOT="/home/user13/Apps/Godot_v4.6.3-stable_mono_linux_x86_64/Godot_v4.6.3-stable_mono_linux.x86_64"
 
-# Run the game from the command line (if Godot is installed)
-godot --headless    # run without graphics
-godot               # launch the editor
-godot --editor       # force editor mode
+# 1. Import assets (only needed after adding/changing .tscn/.tres/.glb, or a fresh checkout)
+"$GODOT" --headless --import
+
+# 2. Launch the editor / run the game by hand
+"$GODOT" --editor --path .             # open the editor (F5 runs the game)
+"$GODOT" --path .                      # run the game windowed (needs DISPLAY)
 ```
 
-The main scene is `main.tscn` (set in project.godot). Press F5 in the Godot editor to run.
+The main scene is `main.tscn` (set in project.godot).
+
+## How to verify changes (no GUI needed)
+
+This is the loop used to validate gameplay/lighting changes from the CLI. Always `dotnet build` first.
+
+**A. Logic / physics check (headless, reads `GD.Print` logs):**
+
+```bash
+timeout 8 "$GODOT" --headless --path . 2>&1 | grep -iE "Player|Chunk|error|exception"
+```
+
+Confirms the maze initializes, the player spawns inside the maze (`[Player] Start cell=…`),
+chunks stream in, and no errors/exceptions appear. For physics questions (e.g. "does the
+player land on the floor or fall through?") add a temporary throttled print in
+`Player._PhysicsProcess`, e.g. `if (frame % 30 == 0) GD.Print($"Y={GlobalPosition.Y} onFloor={IsOnFloor()}");`,
+then run the command above and **remove the debug code afterwards**.
+
+**B. Visual check (real render → screenshot).** A real GPU + `DISPLAY=:0` are available, so the
+Forward+ renderer works. To capture what the camera actually sees, temporarily add to
+`Player._PhysicsProcess` a block that, after ~90 frames, saves the viewport and quits:
+
+```csharp
+// TEMP — remove after verifying
+if (++_dbgFrame == 90) {
+    GetViewport().GetTexture().GetImage().SavePng("res://shot.png");
+    GetTree().Quit();
+}
+```
+
+Then build and run windowed on the display, and open the PNG:
+
+```bash
+dotnet build && DISPLAY=:0 timeout 20 "$GODOT" --path . --resolution 1280x720
+# -> shot.png in the project root; view it, then delete it and the temp code
+```
+
+Remember to delete `shot.png` and revert the temporary debug code before finishing.
 
 ## Architecture
 
@@ -39,13 +82,22 @@ Main (Node3D) — main.tscn
     └── Camera3D — orthographic projection, size 19
 ```
 
+> **Note:** The scene hierarchy above is from the original tutorial starter and is partly outdated. The current game is a streaming procedural maze — see `TECH_SPEC.md` for the authoritative, up-to-date architecture (MazeData, ChunkManager, Chunk, elevated camera). Key facts below reflect the current implementation.
+
+### Maze Geometry (current)
+
+- **Corridor width** = `MazeData.CellWorldSize` = **3.6** world units = 6 × player diameter (collision sphere Ø0.6). Wall thickness equals corridor width (one cell).
+- **Wall height** = `MazeData.WallHeight` = **30** — towering canyon walls that block any over-the-top view of the maze and form a narrow sky strip overhead.
+- Tile dimensions live in `MazeTiles.tres`; the GridMap `cell_size` in `chunk.tscn` must match `CellWorldSize` (X/Z).
+
 ### Player Controller (`src/Player.cs`)
 
-`CharacterBody3D`-based controller with WASD movement and spacebar jumping. Key details:
-- Movement uses `Input.GetVector()` mapped to `move_left`, `move_right`, `move_forward`, `move_back` input actions
-- The `Pivot` child node rotates to face the movement direction via `Basis.LookingAt(direction)`
-- Gravity applied when not on floor; `JumpVelocity` applied on jump input
-- Exported properties: `Speed` (default 5.0), `JumpVelocity` (default 4.5)
+`CharacterBody3D`-based controller with camera-relative WASD movement (no jump — gravity only). Key details:
+- Movement uses `Input.GetVector()` mapped to `move_left`, `move_right`, `move_forward`, `move_back`, resolved relative to the camera yaw
+- The `ModelPivot` child rotates to face the movement direction via `Basis.LookingAt(direction)`
+- **Camera**: dual-node yaw/pitch orbit rig sitting high above and slightly behind the player, angled steeply downward (default pitch −60°, clamped to [−85°, −25°]). A per-frame raycast **spring arm** shortens the camera distance when a wall would block the view of the player, so in the narrow 3.6-wide corridors the camera never clips into a wall and the player stays framed. It stays below the 30-unit wall tops, so the maze layout is never visible from above. Mouse looks; wheel zooms (desired distance 6–14).
+- **HeadLight**: an `OmniLight3D` child of the Player (Y=4, just above head) travels with the player and keeps the player, nearby floor tiles and walls clearly lit at the bottom of the deep canyons where the directional sun barely reaches. The world also has a sky-driven ambient fill and a front-high directional "sun".
+- Exported properties: `Speed` (5.0), `MouseSensitivity`, `Gravity` (15.0), zoom (`MinZoom`/`MaxZoom`/`ZoomStep`), and pitch (`DefaultPitchDeg`/`MinPitchDeg`/`MaxPitchDeg`)
 
 ### Input Map
 

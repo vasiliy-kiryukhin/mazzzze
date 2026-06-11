@@ -8,7 +8,10 @@ public partial class MazeData : Node
 
 	public const int WorldWidth = 10000;
 	public const int WorldHeight = 10000;
-	public const float CellWorldSize = 2.0f;  // размер клетки в мировых единицах
+	// Ширина коридора = 6 × диаметр игрока (коллизия: сфера r=0.3 → Ø0.6) = 3.6
+	public const float CellWorldSize = 3.6f;  // размер клетки в мировых единицах
+	// Высота стен: уходят высоко в небо (canyon-style), полностью блокируют обзор
+	public const float WallHeight = 30.0f;
 
 	public Vector2I PlayerStartCell { get; private set; }
 	public float WorldOffsetX => -WorldWidth * CellWorldSize / 2.0f;

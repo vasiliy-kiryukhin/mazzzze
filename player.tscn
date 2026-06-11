@@ -21,11 +21,18 @@ transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, 0, 0)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
 shape = SubResource("SphereShape3D_hqtel")
 
+[node name="HeadLight" type="OmniLight3D" parent="." unique_id=771033210]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+light_color = Color(1, 0.96, 0.86, 1)
+light_energy = 4.0
+omni_range = 20.0
+omni_attenuation = 0.7
+
 [node name="CameraYaw" type="Node3D" parent="." unique_id=4116826600]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 
 [node name="CameraPitch" type="Node3D" parent="CameraYaw" unique_id=2304092418]
 
 [node name="Camera3D" type="Camera3D" parent="CameraYaw/CameraPitch" unique_id=1857523017]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
 current = true

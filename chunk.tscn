@@ -8,4 +8,5 @@ script = ExtResource("1_eat54")
 
 [node name="GridMap" type="GridMap" parent="." unique_id=1358100135]
 mesh_library = ExtResource("1_kdh3y")
-cell_size = Vector3(2, 1, 2)
+cell_size = Vector3(3.6, 1, 3.6)
+cell_center_y = false

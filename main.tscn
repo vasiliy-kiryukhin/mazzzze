@@ -23,7 +23,7 @@ sky_material = SubResource("ProceduralSkyMaterial_sky")
 background_mode = 2
 sky = SubResource("Sky_env")
 ambient_light_source = 2
-ambient_light_energy = 0.3
+ambient_light_energy = 1.1
 reflected_light_source = 1
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_0xm2m"]
@@ -40,8 +40,9 @@ shape = SubResource("BoxShape3D_ig7tw")
 mesh = SubResource("BoxMesh_0xm2m")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=509116994]
-transform = Transform3D(1, 0, 0, 0, -0.50000006, 0.8660254, 0, -0.8660254, -0.50000006, 1, 15, -1)
-light_energy = 0.8
+transform = Transform3D(1, 0, 0, 0, -0.643, -0.766, 0, 0.766, -0.643, 0, 40, -20)
+light_energy = 1.6
+light_specular = 0.5
 shadow_enabled = true
 
 [node name="MazeData" type="Node" parent="." unique_id=3490752812]
