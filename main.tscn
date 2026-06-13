@@ -15,6 +15,15 @@ material = SubResource("StandardMaterial3D_ground")
 size = Vector3(256, 1, 256)
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.04, 0.05, 0.08, 1)
+sky_horizon_color = Color(0.5, 0.42, 0.32, 1)
+sky_curve = 0.09
+sky_energy_multiplier = 0.85
+ground_bottom_color = Color(0.04, 0.04, 0.05, 1)
+ground_horizon_color = Color(0.2, 0.17, 0.14, 1)
+ground_energy_multiplier = 0.4
+sun_angle_max = 42.0
+sun_curve = 0.12
 
 [sub_resource type="Sky" id="Sky_env"]
 sky_material = SubResource("ProceduralSkyMaterial_sky")
@@ -23,8 +32,16 @@ sky_material = SubResource("ProceduralSkyMaterial_sky")
 background_mode = 2
 sky = SubResource("Sky_env")
 ambient_light_source = 2
-ambient_light_energy = 1.1
+ambient_light_color = Color(0.4, 0.45, 0.6, 1)
+ambient_light_energy = 0.6
 reflected_light_source = 1
+tonemap_mode = 3
+tonemap_white = 6.0
+glow_enabled = true
+glow_intensity = 0.7
+glow_strength = 1.15
+glow_bloom = 0.2
+glow_hdr_threshold = 0.95
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_0xm2m"]
 
@@ -40,10 +57,14 @@ shape = SubResource("BoxShape3D_ig7tw")
 mesh = SubResource("BoxMesh_0xm2m")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=509116994]
-transform = Transform3D(1, 0, 0, 0, -0.643, -0.766, 0, 0.766, -0.643, 0, 40, -20)
-light_energy = 1.6
-light_specular = 0.5
+transform = Transform3D(1, 0, 0, 0, -0.743, -0.669, 0, 0.669, -0.743, 0, 40, -20)
+light_color = Color(1, 0.88, 0.72, 1)
+light_energy = 2.4
+light_specular = 1.0
+light_angular_distance = 5.0
 shadow_enabled = true
+directional_shadow_mode = 2
+directional_shadow_max_distance = 120.0
 
 [node name="MazeData" type="Node" parent="." unique_id=3490752812]
 script = ExtResource("3_mzd")

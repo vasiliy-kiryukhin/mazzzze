@@ -70,7 +70,7 @@ Main (Node3D)                              - main.tscn, root
 ├── Ground (StaticBody3D)                  - collision floor, Y=-0.5
 │   ├── CollisionShape3D                   - BoxShape3D(256, 1, 256)
 │   └── MeshInstance3D                     - BoxMesh(256, 1, 256), green-brown
-├── DirectionalLight3D                     - ~50 deg elevation, high & ahead (-Z), energy=1.6
+├── DirectionalLight3D                     - "sun", ~42 deg elevation, ahead (-Z), energy=2.4, big disk (angular_distance 5)
 ├── MazeData (Node + MazeData.cs)         - Singleton, procedural world data
 ├── Player (CharacterBody3D)              - instance of player.tscn
 │   ├── ModelPivot (Node3D, Y=0.25)       - faces movement direction
@@ -226,24 +226,31 @@ GridMap places each tile centred at the cell's world position. cell_size=(3.6,1,
 
 | Property | Value |
 |----------|-------|
-| Mesh | BoxMesh(3.6, 0.2, 3.6) - flat square, 3.6x3.6 XZ, 0.2 thick |
-| Material | StandardMaterial3D, albedo=Color(0.75, 0.70, 0.60) - warm sand |
-| Collision | BoxShape3D(3.6, 0.2, 3.6) - centred at cell Y=0 |
+| Mesh | BoxMesh(**3.66**, 0.2, **3.66**) - flat square, slightly larger than the 3.6 cell (see "Tile overlap" below) |
+| Material | StandardMaterial3D, dark stone albedo=Color(0.2, 0.19, 0.18), roughness 0.4 + FastNoiseLite normal map (bump 1.5). World-space triplanar, uv1_scale 0.12. Fairly smooth so the distant sun reflects as a streak down the corridor. |
+| Collision | BoxShape3D(3.6, 0.2, 3.6) - matches the **cell** size, not the mesh - centred at cell Y=0 |
 | shapes array | `[shape, Transform3D identity]` - the Transform3D is REQUIRED: MeshLibrary `shapes` is a flat `[shape, transform, ...]` list. Without the transform the floor gets no collision and the player falls through into the void. |
 | mesh_transform | Identity (Y=0, centred on floor) |
 | Shadow casting | On |
 
-**Item 1 - Wall:**
+**Item 1 - Wall:** dark, vertically-fluted canyon rock (matches the reference look in `walls.png`).
 
 | Property | Value |
 |----------|-------|
-| Mesh | BoxMesh(3.6, 30, 3.6) - tall pillar 3.6x3.6 XZ, 30 tall |
-| Material | StandardMaterial3D, albedo=Color(0.35, 0.33, 0.30) - dark stone |
-| Collision | BoxShape3D(3.6, 30, 3.6) with Transform3D Y=+15 |
+| Mesh | BoxMesh(**3.66**, 30, **3.66**) - tall pillar, slightly larger than the 3.6 cell (see "Tile overlap" below) |
+| Material | StandardMaterial3D, see below |
+| Collision | BoxShape3D(3.6, 30, 3.6) - matches the **cell** size, not the mesh - with Transform3D Y=+15 |
 | mesh_transform | Transform3D Y=+15 - wall SITS ON the floor (Y=0 to 30) |
 | Shadow casting | On |
 
+Wall material detail (`StandardMaterial3D_wall` in `MazeTiles.tres`):
+- **Noise:** one `FastNoiseLite` (Cellular-ish, frequency 0.05, 6 fractal octaves) with **domain warp enabled** (type 1, amplitude 12, frequency 0.02) so the rock reads as organic channelled stone rather than even speckle. Baked into two 512² seamless `NoiseTexture2D`s — an albedo one through a 4-stop `Gradient` (near-black valleys `Color(0.035,0.03,0.026)` → dusty brown ridges `Color(0.34,0.3,0.25)`) and a normal map (`as_normal_map`, bump_strength 4.5).
+- **Mapping:** world-space triplanar (`uv1_world_triplanar`) with an anisotropic `uv1_scale = Vector3(0.14, 0.06, 0.14)` — chunky horizontally, ~2.3× stretched vertically. This turns the isotropic noise into the tall **vertical fluting** seen in the reference. (Stretching further — uv1_scale.y below ~0.05 — fans the streaks into "fur"; 0.06 is the stable maximum. World-space mapping also makes adjacent tiles blend into one continuous wall with no per-tile seams.)
+- roughness 0.92, metallic_specular 0.18, normal_scale 1.8.
+
 The Y=+15 offset (= WallHeight/2) is critical: without it, the wall BoxMesh would be centred at Y=0 (half below floor). With the offset, wall occupies Y=0 to Y=30, on top of floor tile (Y=-0.1 to Y=0.1). Walls tower far above the camera, blocking any over-the-top view of the maze.
+
+**Tile overlap (seam fix).** The floor and wall **meshes** are 3.66 wide while the GridMap `cell_size` is 3.6, so neighbouring tiles overlap by ~0.03 per side instead of abutting exactly. Reason: the maze renders at large world coordinates (`WorldOffset = -WorldWidth*CellWorldSize/2 = -18000`; the player starts near world (-17994, -17994)), where float32 precision is only ~0.002. Exactly-coincident tile edges there leave hairline cracks that show the dark background through the floor/walls. The small overlap covers the cracks. Because both materials use **world-space triplanar** mapping, the overlapping region samples the *same* texel on both tiles, so the resulting coplanar z-fight is invisible — no flicker, no double-lighting. The **collision** shapes stay at the true 3.6 cell size so gameplay/clearance is unchanged (the 0.03 visual lip has no collider behind it, which is negligible against the 0.3 player radius). A deeper fix for the precision loss would be a floating-origin / re-centred world, but that is a larger change than the seam bug required.
 
 ### 5.5 Player - Character Controller
 
@@ -346,9 +353,11 @@ Ground collision spans Y=[-1.0, 0.0]. Top surface at Y=0. Provides flat floor ac
 
 ### 5.7 Lighting and Environment
 
-**DirectionalLight3D:**
-- Light travels (0, -0.766, 0.643): ~50 deg below horizontal, heading +Z. The sun therefore sits high and AHEAD of the player (toward -Z, where the entrance/corridor opens), front-lighting the player and the corridor instead of only grazing wall tops. A near-vertical sun would leave the player's vertical faces and the corridor floor dark inside the 30-unit canyons.
-- Energy: 1.6, light_specular 0.5, shadows enabled.
+**DirectionalLight3D (the "sun"):**
+- Light travels (0, -0.669, 0.743): ~42 deg below horizontal, heading +Z. The sun therefore sits AHEAD of the player (toward -Z, where the corridor opens) at a ~42 deg elevation — high enough to read as "up there" yet low enough that, looking down a long straight corridor, the **sun disk appears high up at the far end** (the goal in `walls.png`) instead of out of frame overhead. It front-lights the player and the corridor floor rather than only grazing the wall tops. The azimuth is grid-aligned (purely a rotation about X), so the disk lines up with the maze's straight runs.
+- Energy 2.4, light_color warm `Color(1, 0.88, 0.72)`, light_specular 1.0.
+- **light_angular_distance 5.0** — deliberately large: it grows the rendered sun disk and softens the shadows into the long, soft cast seen in the reference.
+- Shadows enabled (mode 2, max distance 120).
 
 **HeadLight (OmniLight3D, child of Player):**
 - Local point light at Y=4 above the player (just above head height). Travels with the player so the player, the floor tiles underfoot and the nearby walls are always clearly lit, even at the bottom of the deep canyons where the directional sun barely reaches.
@@ -356,9 +365,11 @@ Ground collision spans Y=[-1.0, 0.0]. Top surface at Y=0. Provides flat floor ac
 
 **WorldEnvironment:**
 - Background: Sky (mode=2)
-- Sky: ProceduralSkyMaterial (sun disk follows the DirectionalLight3D direction -> high and ahead)
-- Ambient light: source=Sky (mode=2), energy=1.1 — the key visibility fill. Ambient is a uniform, non-occluded add, so even surfaces in full shadow at the bottom of the deep canyons (and the player, whichever way it faces) stay clearly visible. Without enough ambient the start area reads as near-black.
+- Sky: `ProceduralSkyMaterial` — dark blue zenith `Color(0.04,0.05,0.08)` fading to a **warm horizon glow** `Color(0.5,0.42,0.32)` (sky_curve 0.09). The sun disk follows the DirectionalLight3D direction; `sun_angle_max 42` enlarges its glow halo and `sun_curve 0.12` softens the falloff, so the disk reads as a bright, bloomed sun at the corridor's end. sky_energy_multiplier 0.85.
+- Ambient light: source=Sky (mode=2), energy 0.6, cool tint `Color(0.4,0.45,0.6)` — a low, uniform non-occluded fill so shadowed canyon surfaces stay just visible without washing out the dramatic contrast.
 - Reflected light: source=Sky (mode=1)
+- **Glow/bloom:** enabled, intensity 0.7, strength 1.15, bloom 0.2, hdr_threshold 0.95 — the low threshold lets the bright sun disk bloom into the soft halo that fills the end of the corridor.
+- Tonemap: Filmic (mode 3), white 6.0.
 - SDFGI: disabled
 
 ### 5.8 Mob - Enemy (Placeholder)
@@ -433,7 +444,7 @@ All .blend import disabled (filesystem/import/blender/enabled=false).
 
 4. **CellWorldSize = 3.6** - corridors are 3.6 world-units wide = 6x the player diameter (0.6), giving a wide, comfortable canyon-like passage with ~42% clearance on each side. Wall thickness equals corridor width (one cell).
 
-4a. **WallHeight = 30** - walls tower far above the (max ~15.5-high) camera, so the maze layout can never be seen from above. The tall walls plus a steep overhead sun produce dramatic canyon shafts of light and a narrow strip of sky overhead.
+4a. **WallHeight = 30** - walls tower far above the (max ~15.5-high) camera, so the maze layout can never be seen from above. The tall walls plus a grid-aligned ~42 deg sun produce dramatic canyon shafts of light, a narrow strip of sky overhead, and the sun disk glowing high at the end of long straight corridors.
 
 5. **Dual-node orbit camera** - avoids gimbal lock. Yaw-pitch decomposition means camera orbits cleanly regardless of orientation.
 

@@ -88,7 +88,9 @@ Main (Node3D) — main.tscn
 
 - **Corridor width** = `MazeData.CellWorldSize` = **3.6** world units = 6 × player diameter (collision sphere Ø0.6). Wall thickness equals corridor width (one cell).
 - **Wall height** = `MazeData.WallHeight` = **30** — towering canyon walls that block any over-the-top view of the maze and form a narrow sky strip overhead.
+- **Wall look** (`MazeTiles.tres`): dark, vertically-fluted canyon rock matching the reference `walls.png`. A single domain-warped `FastNoiseLite` feeds an albedo gradient (near-black valleys → dusty brown ridges) and a normal map; world-space triplanar with an anisotropic `uv1_scale = (0.14, 0.06, 0.14)` stretches the noise vertically into tall flutes. Don't push `uv1_scale.y` below ~0.05 — the streaks fan out into "fur".
 - Tile dimensions live in `MazeTiles.tres`; the GridMap `cell_size` in `chunk.tscn` must match `CellWorldSize` (X/Z).
+- **Tile overlap (seam fix):** the floor/wall *meshes* are **3.66** wide (slightly larger than the 3.6 cell) so neighbours overlap ~0.03/side. The maze renders at huge world coords (~-18000, since `WorldOffset = -WorldWidth*CellWorldSize/2`), where float32 precision (~0.002) leaves hairline cracks between exactly-abutting tiles that show the dark background through the floor. The overlap hides them; world-triplanar mapping makes the overlap sample the same texel so the coplanar z-fight is invisible. **Collision shapes stay 3.6** — don't enlarge them. See TECH_SPEC §5.4 "Tile overlap".
 
 ### Player Controller (`src/Player.cs`)
 
@@ -96,7 +98,8 @@ Main (Node3D) — main.tscn
 - Movement uses `Input.GetVector()` mapped to `move_left`, `move_right`, `move_forward`, `move_back`, resolved relative to the camera yaw
 - The `ModelPivot` child rotates to face the movement direction via `Basis.LookingAt(direction)`
 - **Camera**: dual-node yaw/pitch orbit rig sitting high above and slightly behind the player, angled steeply downward (default pitch −60°, clamped to [−85°, −25°]). A per-frame raycast **spring arm** shortens the camera distance when a wall would block the view of the player, so in the narrow 3.6-wide corridors the camera never clips into a wall and the player stays framed. It stays below the 30-unit wall tops, so the maze layout is never visible from above. Mouse looks; wheel zooms (desired distance 6–14).
-- **HeadLight**: an `OmniLight3D` child of the Player (Y=4, just above head) travels with the player and keeps the player, nearby floor tiles and walls clearly lit at the bottom of the deep canyons where the directional sun barely reaches. The world also has a sky-driven ambient fill and a front-high directional "sun".
+- **HeadLight**: an `OmniLight3D` child of the Player (Y=4, just above head) travels with the player and keeps the player, nearby floor tiles and walls clearly lit at the bottom of the deep canyons where the directional sun barely reaches.
+- **Sun & sky** (`main.tscn`): the `DirectionalLight3D` "sun" is grid-aligned at ~42° elevation ahead of the player (−Z), warm and bright (energy 2.4) with a large `light_angular_distance` (5) so its disk renders big and casts long soft shadows. The `ProceduralSkyMaterial` has a dark zenith, warm horizon glow and an enlarged sun halo, and the environment uses strong bloom (low `glow_hdr_threshold`) so that **looking down a long straight corridor you see the glowing sun disk high up at the far end** (the look of `walls.png`). A low cool sky-driven ambient fill keeps shadows readable without killing the contrast.
 - Exported properties: `Speed` (5.0), `MouseSensitivity`, `Gravity` (15.0), zoom (`MinZoom`/`MaxZoom`/`ZoomStep`), and pitch (`DefaultPitchDeg`/`MinPitchDeg`/`MaxPitchDeg`)
 
 ### Input Map

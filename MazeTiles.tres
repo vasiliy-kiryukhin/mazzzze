@@ -1,21 +1,103 @@
 [gd_resource type="MeshLibrary" format=3 uid="uid://2rqq7e6neqn4"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_aiggq"]
-albedo_color = Color(0.75, 0.7, 0.6, 1)
+; ---------------------------------------------------------------------------
+; Floor: dark stone, fairly smooth so the distant sun reflects as a streak
+; ---------------------------------------------------------------------------
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_floor"]
+noise_type = 3
+frequency = 0.03
+fractal_octaves = 4
 
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_floor_n"]
+width = 256
+height = 256
+generate_mipmaps = true
+seamless = true
+as_normal_map = true
+bump_strength = 1.5
+noise = SubResource("FastNoiseLite_floor")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.2, 0.19, 0.18, 1)
+metallic_specular = 0.6
+roughness = 0.4
+normal_enabled = true
+normal_scale = 0.6
+normal_texture = SubResource("NoiseTexture2D_floor_n")
+uv1_triplanar = true
+uv1_world_triplanar = true
+uv1_scale = Vector3(0.12, 0.12, 0.12)
+
+; Mesh is slightly larger than the 3.6 cell so neighbouring floor tiles OVERLAP
+; (~0.03 per side). At the maze's large world coordinates (~-18000) float32
+; precision (~0.002) leaves hairline cracks between exactly-abutting tiles; the
+; overlap covers them. World-space triplanar mapping makes the overlap sample the
+; same texel on both tiles, so the coplanar z-fight in the overlap is invisible.
 [sub_resource type="BoxMesh" id="BoxMesh_aiggq"]
-material = SubResource("StandardMaterial3D_aiggq")
-size = Vector3(3.6, 0.2, 3.6)
+material = SubResource("StandardMaterial3D_floor")
+size = Vector3(3.66, 0.2, 3.66)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
 size = Vector3(3.6, 0.2, 3.6)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
-albedo_color = Color(0.35, 0.33, 0.3, 1)
+; ---------------------------------------------------------------------------
+; Wall: rough dark rock, vertically fluted (towering canyon look, see walls.png).
+; A domain-warped noise feeds the albedo gradient and normal map; world-space
+; triplanar mapping blends adjacent tiles into one continuous wall. The
+; anisotropic uv1_scale (chunky horizontal, ~2.3x stretched vertical) turns the
+; isotropic noise into tall vertical flutes. (uv1_scale.y below ~0.05 fans the
+; streaks into "fur".)
+; ---------------------------------------------------------------------------
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_wall"]
+noise_type = 3
+frequency = 0.05
+fractal_octaves = 6
+fractal_lacunarity = 2.3
+fractal_gain = 0.55
+domain_warp_enabled = true
+domain_warp_type = 1
+domain_warp_amplitude = 12.0
+domain_warp_frequency = 0.02
+domain_warp_fractal_octaves = 3
 
+[sub_resource type="Gradient" id="Gradient_wall"]
+offsets = PackedFloat32Array(0, 0.4, 0.7, 1)
+colors = PackedColorArray(0.035, 0.03, 0.026, 1, 0.11, 0.095, 0.08, 1, 0.22, 0.19, 0.16, 1, 0.34, 0.3, 0.25, 1)
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_wall_a"]
+width = 512
+height = 512
+generate_mipmaps = true
+seamless = true
+color_ramp = SubResource("Gradient_wall")
+noise = SubResource("FastNoiseLite_wall")
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_wall_n"]
+width = 512
+height = 512
+generate_mipmaps = true
+seamless = true
+as_normal_map = true
+bump_strength = 4.5
+noise = SubResource("FastNoiseLite_wall")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
+albedo_color = Color(1, 1, 1, 1)
+albedo_texture = SubResource("NoiseTexture2D_wall_a")
+roughness = 0.92
+metallic_specular = 0.18
+normal_enabled = true
+normal_scale = 1.8
+normal_texture = SubResource("NoiseTexture2D_wall_n")
+uv1_triplanar = true
+uv1_world_triplanar = true
+uv1_scale = Vector3(0.14, 0.06, 0.14)
+
+; Slightly oversized (XZ) so adjacent wall tiles overlap and show no seam — same
+; rationale as the floor mesh above (world-triplanar hides the coplanar overlap).
 [sub_resource type="BoxMesh" id="BoxMesh_wall"]
 material = SubResource("StandardMaterial3D_wall")
-size = Vector3(3.6, 30, 3.6)
+size = Vector3(3.66, 30, 3.66)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
 size = Vector3(3.6, 30, 3.6)
