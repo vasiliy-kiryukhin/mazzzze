@@ -6,4 +6,4 @@
 
 **Сложность:** 8 SP. **Ассеты:** Kenney (Graveyard/Fantasy), Quaternius, Poly Haven сканы, Sketchfab CC0 (статуи/руины) — все glTF, Godot-friendly.
 
-**Связи:** [IDEA-0033](IDEA-0033-open-space-content.md), [IDEA-0034](IDEA-0034-poi-driven-population.md), REQ-0000-vision (ориентация по стенам — ядро игры), [ENVIRONMENT](../ENVIRONMENT.md).
+**Связи:** [IDEA-0033](IDEA-0033-open-space-content.md), [IDEA-0034](IDEA-0034-poi-driven-population.md), [IDEA-0005](../items/IDEA-0005-compass.md) (компас наводит на ориентиры), REQ-0000-vision (ориентация по стенам — ядро игры), [ENVIRONMENT](../ENVIRONMENT.md).

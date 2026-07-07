@@ -6,4 +6,4 @@
 
 **Сложность:** 8 SP (зависит от [IDEA-0037](IDEA-0037-cell-feature-layer.md); `RigidBody3D`/здоровье/snap-to-grid). **Ассеты:** Quaternius Modular Dungeon, Kenney (CC0 — бочки/ящики).
 
-**Связи:** [IDEA-0037](IDEA-0037-cell-feature-layer.md), [IDEA-0042](IDEA-0042-traps-hazards.md), REQ-0016-base-item-pickup, [ENVIRONMENT](../ENVIRONMENT.md).
+**Связи:** [IDEA-0037](IDEA-0037-cell-feature-layer.md), [IDEA-0042](IDEA-0042-traps-hazards.md), [IDEA-0024](../items/IDEA-0024-chalk.md) (мел — проход силами предмета игрока, здесь — фича уровня), REQ-0016-base-item-pickup, [ENVIRONMENT](../ENVIRONMENT.md).

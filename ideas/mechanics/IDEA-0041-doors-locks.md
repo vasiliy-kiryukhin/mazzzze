@@ -6,4 +6,4 @@
 
 **Сложность:** 8 SP (зависит от [IDEA-0037](IDEA-0037-cell-feature-layer.md); размещение ключ-дверь как граф-грамматика). **Ассеты:** Quaternius/Kenney двери (CC0).
 
-**Связи:** [IDEA-0037](IDEA-0037-cell-feature-layer.md), [IDEA-0030](../world/IDEA-0030-cyclic-generation.md), [IDEA-0043](IDEA-0043-interactive-objects.md), REQ-0012-base-item (Key), [ENVIRONMENT](../ENVIRONMENT.md).
+**Связи:** [IDEA-0037](IDEA-0037-cell-feature-layer.md), [IDEA-0030](../world/IDEA-0030-cyclic-generation.md), [IDEA-0043](IDEA-0043-interactive-objects.md), [IDEA-0024](../items/IDEA-0024-chalk.md) (мел обходит стену/дверь — предмет игрока), REQ-0012-base-item (Key), [ENVIRONMENT](../ENVIRONMENT.md).
