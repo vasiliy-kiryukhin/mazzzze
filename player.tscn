@@ -21,10 +21,11 @@ shape = SubResource("SphereShape3D_hqtel")
 
 [node name="HeadLight" type="OmniLight3D" parent="." unique_id=771033210]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
-light_color = Color(1, 0.96, 0.86, 1)
-light_energy = 4.0
-omni_range = 20.0
-omni_attenuation = 0.7
+light_color = Color(1, 0.945, 0.83, 1)
+light_energy = 2.5
+omni_range = 22.5
+omni_attenuation = 1.25
+shadow_enabled = true
 
 [node name="CameraYaw" type="Node3D" parent="." unique_id=-178140696]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)

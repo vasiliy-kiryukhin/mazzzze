@@ -1,0 +1,51 @@
+[gd_resource type="ShaderMaterial" load_steps=13 format=3 uid="uid://cmuu3u136dfva"]
+
+[ext_resource type="Shader" uid="uid://dtnagy1v38bb4" path="res://art/RockPack1/Shaders/advanced_rock.gdshader" id="1_7jq3k"]
+[ext_resource type="Texture2D" uid="uid://cu8ptivw4nuav" path="res://art/RockPack1/Materials/Red Rock/rocks_red_albedo.png" id="2_ysnu5"]
+[ext_resource type="Texture2D" uid="uid://ttoxkq03faol" path="res://art/RockPack1/Materials/Red Rock/rocks_red_heightmap.png" id="3_saf2t"]
+[ext_resource type="Texture2D" uid="uid://cf75l0jopmyde" path="res://art/RockPack1/Materials/Red Rock/rocks_red_normal.png" id="3_w8urm"]
+[ext_resource type="Texture2D" uid="uid://cdkwhhj0l6phu" path="res://art/RockPack1/Materials/Red Rock/rocks_red_orm.png" id="5_3iatd"]
+[ext_resource type="Texture2D" uid="uid://7iolnqut1ae6" path="res://art/RockPack1/Models/Cliffs_normal.png" id="6_3cc1m"]
+[ext_resource type="Texture2D" uid="uid://340spnlc3cf6" path="res://art/RockPack1/Shaders/fix_tiling_noise.png" id="6_ghnln"]
+[ext_resource type="Texture2D" uid="uid://cwqqnjlkwv2f5" path="res://art/RockPack1/Models/Cliffs_oc.png" id="7_s13c1"]
+[ext_resource type="Texture2D" uid="uid://bjchxqsxe01j4" path="res://art/RockPack1/Materials/Sand/sand_albedo.png" id="7_x343k"]
+[ext_resource type="Texture2D" uid="uid://2gsbqpaapqi1" path="res://art/RockPack1/Materials/Sand/sand_normal.png" id="8_02uhs"]
+[ext_resource type="Texture2D" uid="uid://bh7bl4bg3fqal" path="res://art/RockPack1/Materials/Sand/sand_heightmap.png" id="10_3hayg"]
+[ext_resource type="Texture2D" uid="uid://dyenmhiqi6anx" path="res://art/RockPack1/Materials/Sand/sand_orm.png" id="11_goouv"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_7jq3k")
+shader_parameter/albedo_primary = Color(1, 1, 1, 1)
+shader_parameter/albedo_secondary = Color(1, 1, 1, 1)
+shader_parameter/albedo_curvature = 0.092
+shader_parameter/roughness_curvature = 0.1
+shader_parameter/normal_strength_primary = 1.0
+shader_parameter/normal_strength_secondary = 1.0
+shader_parameter/ao_lifght_affect = 0.0
+shader_parameter/detail_scale = Vector3(0.6, 1, 0.6)
+shader_parameter/secondary_detail_scale = Vector3(1.1, 1.1, 1.1)
+shader_parameter/secondary_height = 0.878
+shader_parameter/secondary_height_scale = 0.2
+shader_parameter/limit_mask_to_direction = true
+shader_parameter/dir_mask_direction = Vector3(0, 1, 0)
+shader_parameter/dir_mask_offset = 0.5
+shader_parameter/dir_mask_width = 0.1
+shader_parameter/limit_mask_to_crevices = false
+shader_parameter/crev_mask_offset = 0.5
+shader_parameter/crev_mask_width = 0.1
+shader_parameter/add_masks = false
+shader_parameter/blend_sharpness = 6.0
+shader_parameter/fix_tiling = true
+shader_parameter/preview_mask = false
+shader_parameter/texture_detail_albedo = ExtResource("2_ysnu5")
+shader_parameter/texture_detail_normal = ExtResource("3_w8urm")
+shader_parameter/texture_detail_orm = ExtResource("5_3iatd")
+shader_parameter/texture_detail_height = ExtResource("3_saf2t")
+shader_parameter/texture_secondary_albedo = ExtResource("7_x343k")
+shader_parameter/texture_secondary_normal = ExtResource("8_02uhs")
+shader_parameter/texture_secondary_orm = ExtResource("11_goouv")
+shader_parameter/texture_secondary_height = ExtResource("10_3hayg")
+shader_parameter/texture_mesh_normal = ExtResource("6_3cc1m")
+shader_parameter/texture_mesh_oc = ExtResource("7_s13c1")
+shader_parameter/texture_fix_tiling_noise = ExtResource("6_ghnln")

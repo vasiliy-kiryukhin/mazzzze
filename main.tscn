@@ -8,6 +8,8 @@
 [ext_resource type="Script" path="res://src/ViewfinderHud.cs" id="6_viewfinder"]
 [ext_resource type="Script" path="res://src/PhotoEnterHud.cs" id="7_photoenter"]
 [ext_resource type="Script" path="res://src/MonsterSpawner.cs" id="8_spawner"]
+[ext_resource type="Material" path="res://art/RockPack1/Materials/Cliff_Material_Dark_Floor.tres" id="9_grndmat"]
+[ext_resource type="Script" path="res://src/LightingController.cs" id="10_lighting"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ig7tw"]
 size = Vector3(256, 1, 256)
@@ -16,17 +18,17 @@ size = Vector3(256, 1, 256)
 albedo_color = Color(0.3, 0.35, 0.25, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_0xm2m"]
-material = SubResource("StandardMaterial3D_ground")
+material = ExtResource("9_grndmat")
 size = Vector3(256, 1, 256)
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
-sky_top_color = Color(0.04, 0.05, 0.08, 1)
-sky_horizon_color = Color(0.5, 0.42, 0.32, 1)
+sky_top_color = Color(0.015, 0.015, 0.02, 1)
+sky_horizon_color = Color(0.02, 0.02, 0.025, 1)
 sky_curve = 0.09
-sky_energy_multiplier = 0.85
-ground_bottom_color = Color(0.04, 0.04, 0.05, 1)
-ground_horizon_color = Color(0.2, 0.17, 0.14, 1)
-ground_energy_multiplier = 0.4
+sky_energy_multiplier = 0.12
+ground_bottom_color = Color(0.01, 0.01, 0.015, 1)
+ground_horizon_color = Color(0.015, 0.015, 0.02, 1)
+ground_energy_multiplier = 0.2
 sun_angle_max = 42.0
 sun_curve = 0.12
 
@@ -36,12 +38,13 @@ sky_material = SubResource("ProceduralSkyMaterial_sky")
 [sub_resource type="Environment" id="Environment_ig7tw"]
 background_mode = 2
 sky = SubResource("Sky_env")
-ambient_light_source = 2
-ambient_light_color = Color(0.4, 0.45, 0.6, 1)
-ambient_light_energy = 0.6
+ambient_light_source = 1
 reflected_light_source = 1
 tonemap_mode = 3
 tonemap_white = 6.0
+fog_enabled = true
+fog_light_color = Color(0.01, 0.01, 0.015, 1)
+fog_density = 0.035
 glow_enabled = true
 glow_intensity = 0.7
 glow_strength = 1.15
@@ -63,6 +66,7 @@ mesh = SubResource("BoxMesh_0xm2m")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=509116994]
 transform = Transform3D(1, 0, 0, 0, -0.743, -0.669, 0, 0.669, -0.743, 0, 40, -20)
+visible = false
 light_color = Color(1, 0.88, 0.72, 1)
 light_energy = 2.4
 light_specular = 1.0
@@ -81,6 +85,12 @@ script = ExtResource("2_0xm2m")
 
 [node name="MonsterSpawner" type="Node3D" parent="."]
 script = ExtResource("8_spawner")
+
+[node name="LightingController" type="Node" parent="."]
+script = ExtResource("10_lighting")
+SunPath = NodePath("../DirectionalLight3D")
+WorldEnvironmentPath = NodePath("../WorldEnvironment")
+HeadLightPath = NodePath("../Player/HeadLight")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1995028696]
 environment = SubResource("Environment_ig7tw")
