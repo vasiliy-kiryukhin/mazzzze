@@ -1,0 +1,342 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "5 циклов активация→деактивация подряд, затем вход — фото не повреждено, телепорт в ту же точку.",
+  "id": "TC-REG-05",
+  "title": "Серия активаций/деактиваций не ломает фотографию — вход работает",
+  "requirement": {
+    "feature": "REQ-0017-photo",
+    "functional": [
+      "F-31",
+      "F-33"
+    ],
+    "acceptance": "Многократная активация/деактивация не портит предмет — после цикла вход в фото работает",
+    "markdown": "60-edge-regression.md",
+    "markdown_anchor": "tc-reg-05"
+  },
+  "categories": [
+    "logic"
+  ],
+  "scene": "res://test_scene.tscn",
+  "run": {
+    "headless": true,
+    "display": ":0"
+  },
+  "random_seed_note": "Требует открытого коридора для финального входа.",
+  "max_duration_frames": 816,
+  "harness_requirements": [
+    "capture_gd_print",
+    "input_simulation",
+    "frame_advance"
+  ],
+  "preconditions": [
+    "Фотография создана в слоте 0 (setup). Игрок смотрит в открытый коридор."
+  ],
+  "setup": [
+    {
+      "type": "wait_frames",
+      "frames": 90,
+      "reason": "инициализация мира"
+    },
+    {
+      "type": "mouse_motion",
+      "dx": 0,
+      "dy": -20,
+      "reason": "слегка опустить камеру — смотреть вдоль пола"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "action",
+      "name": "move_forward",
+      "mode": "hold",
+      "frames": 6,
+      "reason": "короткий шаг вперёд — сместить игрока ~1u для гарантии FocusMinDistance > 1.8u"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "фотоаппарат (слот 0)"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "mouse_button",
+      "button": "left",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 150,
+      "reason": "отсчёт, фото создано"
+    }
+  ],
+  "steps": [
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "цикл 1: открыть"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 3
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 3
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "цикл 1: активировать"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 3
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "цикл 1: деактивировать"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 3
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "цикл 2: активировать"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 3
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "цикл 2: деактивировать"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 3
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "цикл 3: активировать"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 3
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "цикл 3: деактивировать"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 3
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "цикл 4: активировать"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 3
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "цикл 4: деактивировать"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 3
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "цикл 5: активировать"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "закрыть инвентарь, фото в руке после 5-го цикла"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "move_forward",
+      "mode": "hold",
+      "frames": 120,
+      "reason": "ход вперёд ~2с — вход в фото после 5 циклов"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 20
+    }
+  ],
+  "assertions": [
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Inventory\\] Activate 'photo' → hand \\(slot 0 reserved\\)",
+      "min": 5,
+      "reason": "минимум 5 активаций"
+    },
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Inventory\\] Deactivate 'photo' → slot 0",
+      "min": 5,
+      "reason": "минимум 5 деактиваций"
+    },
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Photo\\] Entered → teleported",
+      "reason": "вход сработал после всех циклов",
+      "after_step": 24
+    },
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Player\\] Teleport → world=",
+      "reason": "игрок телепортирован",
+      "after_step": 24
+    }
+  ],
+  "manual_verification_ref": "60-edge-regression.md → TC-REG-05, «Верификация»",
+  "expected_result_summary": "5 циклов активация→деактивация; затем вход — телепорт успешен."
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Направление броска = горизонтальный yaw камеры. Фиксируем CameraYawForward и dir из лога; проверяем сонаправленность.",
+  "id": "TC-F48-01",
+  "title": "Направление броска = yaw камеры (горизонт)",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-48"], "acceptance": "Бросок по взгляду камеры (горизонтальный yaw)", "markdown": "30-throw-physics.md", "markdown_anchor": "tc-f48-01" },
+  "categories": ["logic"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 420,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "node_property_read"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "aim_camera", "yaw_deg": 0.0, "reason": "задать yaw=0" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "node_property", "path": "/root/Main/Player", "property": "CameraYawForward", "capture_as": "fwd_at_yaw0", "reason": "ожидаемое горизонтальное направление броска" },
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 30, "reason": "бросок" },
+    { "type": "wait_frames", "frames": 200, "reason": "дождаться land" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Throw\\] launch force=([0-9.]+) dir=\\(([0-9.\\-]+),([0-9.\\-]+)\\)", "regex": true, "reason": "выпуск с направлением" },
+    {
+      "kind": "manual_visual_check",
+      "description": "dir=(x,z) из лога [Throw] launch сонаправлен сохранённому CameraYawForward (fwd_at_yaw0). При повторе с другим yaw вектор dir поворачивается на ту же разность углов.",
+      "md_ref": "30-throw-physics.md → TC-F48-01",
+      "captures": ["fwd_at_yaw0"]
+    }
+  ],
+  "manual_verification_ref": "30-throw-physics.md → TC-F48-01, «Верификация»",
+  "expected_result_summary": "dir броска = CameraYawForward (горизонтальный yaw камеры)."
+}

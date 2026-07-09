@@ -1,0 +1,110 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "GdUnit4 data-driven scenario. Загружается GdUnit4 C# test-раннером (ISceneRunner). Шаги — симуляция ввода + прокрутка кадров; проверки — по перехваченному буферу GD.Print и узлам сцены. См. _scenario-schema.json.",
+  "id": "TC-F47-03",
+  "title": "Бросок освобождает слот (Activated → InWorld), мяч не расходуется",
+  "requirement": {
+    "feature": "REQ-0021-tennis-ball",
+    "functional": ["F-47"],
+    "acceptance": "Бросок — мяч не уничтожается; слот освобождается; Activated → InWorld",
+    "markdown": "10-lifecycle-reusability.md",
+    "markdown_anchor": "tc-f47-03"
+  },
+  "categories": ["logic"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "random_seed_note": "Сценарий не зависит от позиций монстров; сид не фиксируется.",
+  "max_duration_frames": 480,
+  "record_video": true,
+  "video_fps": 15,
+  "harness_requirements": [
+    "capture_gd_print: раннер должен собирать все GD.Print в буфер для log_*-проверок",
+    "input_simulation: через ISceneRunner (симуляция InputMap-action и физических keycode)",
+    "frame_advance: раннер крутит _PhysicsProcess на 60 Гц (dt=1/60)"
+  ],
+  "preconditions": [
+    "Свежий запуск main.tscn; мяч засеян в слот 1; инвентарь закрыт"
+  ],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "полная инициализация: MazeData, ChunkManager, MonsterSpawner, Player._Ready" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap", "reason": "открыть инвентарь" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap", "reason": "выбрать ряд 1" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "колонка 2 → активировать мяч в руку (слот 1 бронируется)" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap", "reason": "закрыть инвентарь" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 66, "reason": "полный заряд (~1.1 с > MaxChargeTime=1.0 с) → бросок на максимуме" },
+    { "type": "wait_frames", "frames": 240, "reason": "дождаться остановки снаряда и перехода в WorldItem (MaxAirborneTime=6 с=360 кадров; обычно 1–3 с)" }
+  ],
+  "assertions": [
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Inventory\\] Activate 'tennis_ball' → hand \\(slot 1 reserved\\)",
+      "after_step": "setup"
+    },
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Inventory\\] Throw 'tennis_ball' force=([0-9.]+)",
+      "regex": true,
+      "capture_group": 1,
+      "min": 10.5,
+      "max": 11.0,
+      "after_step": 1,
+      "reason": "полный заряд → сила ≈ MaxThrowForce=11.0 (не выше)"
+    },
+    {
+      "kind": "log_order",
+      "patterns": [
+        "\\[Inventory\\] Activate 'tennis_ball' → hand",
+        "\\[Throw\\] launch force=",
+        "\\[Inventory\\] Throw 'tennis_ball' force=",
+        "\\[Throw\\] land → WorldItem at"
+      ],
+      "reason": "корректная последовательность: активация → создание снаряда (launch) → выпуск броска → посадка"
+    },
+    {
+      "kind": "log_not_contains",
+      "pattern": "\\[Inventory\\] Use item 'tennis_ball'",
+      "reason": "мяч не расходуется (нет вызова Item.Use / ConsumeActivated)"
+    },
+    {
+      "kind": "node",
+      "path": "/root/Main/Player/ModelPivot/Character/Rig/GeneralSkeleton/HandAnchor/HandItem",
+      "exists": true,
+      "at": "after_setup",
+      "reason": "после активации мяч виден в кисти (BoneAttachment3D RightHand)"
+    },
+    {
+      "kind": "node",
+      "path": "/root/Main/Player/ModelPivot/Character/Rig/GeneralSkeleton/HandAnchor/HandItem",
+      "exists": false,
+      "at": "end",
+      "reason": "после броска мяч исчез из кисти (Activated → InWorld)"
+    },
+    {
+      "kind": "node_by_type",
+      "parent": "/root/Main",
+      "type": "ThrowProjectile",
+      "count_min": 0,
+      "count_max": 0,
+      "at": "end",
+      "reason": "снаряд погашен (QueueFree после Land)"
+    },
+    {
+      "kind": "node_by_type",
+      "parent": "/root/Main",
+      "type": "WorldItem",
+      "count_min": 1,
+      "count_max": 1,
+      "at": "end",
+      "reason": "мяч стал лежащим предметом (не уничтожен) — подтверждение многоразовости"
+    }
+  ],
+  "manual_verification_ref": "10-lifecycle-reusability.md → TC-F47-03, раздел «Верификация»",
+  "expected_result_summary": "Мяч исчезает из кисти; слот 1 свободен; в логе Activate→Throw→launch→land; в сцене ровно один WorldItem, ThrowProjectile удалён."
+}

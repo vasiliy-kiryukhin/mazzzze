@@ -1,0 +1,57 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Деактивация (повторный выбор той же ячейки) возвращает мяч в слот без броска; заряд сбрасывается.",
+  "id": "TC-F47-06",
+  "title": "Деактивация возвращает мяч в слот (без броска)",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-47", "F-50"], "acceptance": "Деактивация (toggle той же ячейки) — заряд сбрасывается, без броска", "markdown": "10-lifecycle-reusability.md", "markdown_anchor": "tc-f47-06" },
+  "categories": ["logic"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 300,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "inventory_toggle", "mode": "tap", "reason": "открыть инвентарь для деактивации" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap", "reason": "выбрать ряд 1" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "повторный выбор той же (забронированной) ячейки → toggle: деактивация" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap", "reason": "закрыть инвентарь" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Inventory\\] Activate 'tennis_ball' → hand \\(slot 1 reserved\\)", "after_step": "setup", "reason": "предварительная активация" },
+    { "kind": "log_contains", "pattern": "\\[Inventory\\] Deactivate 'tennis_ball' → slot 1", "reason": "деактивация вернула мяч в слот" },
+    { "kind": "log_not_contains", "pattern": "\\[Inventory\\] Throw 'tennis_ball'", "reason": "броска не было" },
+    { "kind": "log_not_contains", "pattern": "\\[Throw\\] launch", "reason": "снаряд не создавался" },
+    {
+      "kind": "node",
+      "path": "/root/Main/Player/ModelPivot/Character/Rig/GeneralSkeleton/HandAnchor/HandItem",
+      "exists": false,
+      "at": "end",
+      "reason": "после деактивации мяч исчез из кисти (вернулся в слот)"
+    },
+    {
+      "kind": "node_by_type",
+      "parent": "/root/Main",
+      "type": "ThrowProjectile",
+      "count_max": 0,
+      "at": "end"
+    }
+  ],
+  "manual_verification_ref": "10-lifecycle-reusability.md → TC-F47-06, «Верификация»",
+  "expected_result_summary": "Лог Deactivate … slot 1; нет Throw/launch; мяч в кисти отсутствует; снаряд не создан."
+}

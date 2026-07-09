@@ -1,0 +1,53 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Обратная связь при зарядке: мяч пульсирует масштабом в руке (SetHandItemCharge). До заряда — статичен.",
+  "id": "TC-VIS-03",
+  "title": "Обратная связь при зарядке — пульсация масштаба мяча в руке",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-50"], "acceptance": "Во время удержания ЛКМ — визуальная пульсация мяча", "markdown": "50-visual.md", "markdown_anchor": "tc-vis-03" },
+  "categories": ["visual"],
+  "scene": "res://main.tscn",
+  "run": { "headless": false, "display": ":0" },
+  "max_duration_frames": 240,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "screenshot"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "screenshot", "path": "/tmp/tc-vis-03-idle.png", "reason": "до заряда — мяч статичен" },
+    { "type": "action", "name": "use_activated", "mode": "press", "reason": "зажать ЛКМ" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "screenshot", "path": "/tmp/tc-vis-03-charge-a.png" },
+    { "type": "wait_frames", "frames": 20 },
+    { "type": "screenshot", "path": "/tmp/tc-vis-03-charge-b.png", "reason": "пульсация: масштаб «дышит» во времени" },
+    { "type": "action", "name": "throw_cancel", "mode": "tap", "reason": "отменить заряд (без броска)" },
+    { "type": "action", "name": "use_activated", "mode": "release" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "assertions": [
+    {
+      "kind": "node",
+      "path": "/root/Main/Player/ModelPivot/Character/Rig/GeneralSkeleton/HandAnchor/HandItem",
+      "exists": true,
+      "at": "end",
+      "reason": "мяч остался в кисти после отмены"
+    },
+    {
+      "kind": "manual_visual_check",
+      "description": "До заряда (idle) мяч статичен. Во время удержания ЛКМ масштаб мяча пульсирует во времени (нарастающая синусоида, до ~+35% к концу). После отмены — статичен снова.",
+      "md_ref": "50-visual.md → TC-VIS-03",
+      "screenshots": ["/tmp/tc-vis-03-idle.png", "/tmp/tc-vis-03-charge-a.png", "/tmp/tc-vis-03-charge-b.png"]
+    }
+  ],
+  "manual_verification_ref": "50-visual.md → TC-VIS-03, «Верификация»",
+  "expected_result_summary": "Во время заряда мяч пульсирует; в покое — статичен."
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "После броска ExternalSpeedFactor восстанавливается до 1.0 (заряд больше не занижает скорость).",
+  "id": "TC-REG-01",
+  "title": "Скорость игрока восстанавливается после броска",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-50"], "acceptance": "После броска/отмены ExternalSpeedFactor = 1.0", "markdown": "60-edge-regression.md", "markdown_anchor": "tc-reg-01" },
+  "categories": ["logic"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 360,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "node_property_read"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 60, "reason": "заряд + бросок" },
+    { "type": "wait_frames", "frames": 40, "reason": "после броска скорость должна восстановиться" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Inventory\\] Throw 'tennis_ball' force=", "reason": "бросок выполнен" },
+    {
+      "kind": "node_property",
+      "path": "/root/Main/Player",
+      "property": "ExternalSpeedFactor",
+      "equals": 1.0,
+      "at": "end",
+      "reason": "множитель скорости восстановлен после броска"
+    }
+  ],
+  "manual_verification_ref": "60-edge-regression.md → TC-REG-01, «Верификация»",
+  "expected_result_summary": "После броска ExternalSpeedFactor=1.0 (скорость штатная)."
+}

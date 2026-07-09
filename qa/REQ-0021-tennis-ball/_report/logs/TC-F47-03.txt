@@ -1,0 +1,9 @@
+[90] [Inventory] Seeded 2/12 items
+[90] [Monster] Spawn 'ifrit' cell=(7, 6) seg=[(0, 0)..(16, 16))
+[90] [Monster] Spawn 'ifrit' cell=(11, 9) seg=[(0, 0)..(16, 16))
+[90] [Monster] Spawn 'ifrit' cell=(1, 3) seg=[(0, 0)..(16, 16))
+[90] [MonsterSpawner] Spawned 3 Ifrit near start (9, 1)
+[102] [Inventory] Activate 'tennis_ball' → hand (slot 1 reserved)
+[192] [Throw] launch force=11.0 dir=(-0.00,-1.00) aware=0
+[192] [Inventory] Throw 'tennis_ball' force=11.0 (aware monsters=0)
+[432] [Throw] land → WorldItem at (7.2, -20.1)

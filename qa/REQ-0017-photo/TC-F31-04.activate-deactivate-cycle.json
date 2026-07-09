@@ -1,0 +1,285 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Цикл активация→деактивация→активация→деактивация — фото не уничтожается при деактивации, можно повторно активировать.",
+  "id": "TC-F31-04",
+  "title": "Фотография не уничтожается при деактивации — повторная активация работает",
+  "requirement": {
+    "feature": "REQ-0017-photo",
+    "functional": [
+      "F-31"
+    ],
+    "acceptance": "Цикл активация→деактивация не уничтожает предмет — его можно активировать повторно",
+    "markdown": "10-lifecycle.md",
+    "markdown_anchor": "tc-f31-04"
+  },
+  "categories": [
+    "logic"
+  ],
+  "scene": "res://test_scene.tscn",
+  "run": {
+    "headless": true,
+    "display": ":0"
+  },
+  "max_duration_frames": 616,
+  "harness_requirements": [
+    "capture_gd_print",
+    "input_simulation",
+    "frame_advance"
+  ],
+  "preconditions": [
+    "Фотография создана в слоте 0 (setup)"
+  ],
+  "setup": [
+    {
+      "type": "wait_frames",
+      "frames": 90,
+      "reason": "инициализация мира"
+    },
+    {
+      "type": "mouse_motion",
+      "dx": 0,
+      "dy": -20,
+      "reason": "слегка опустить камеру — смотреть вдоль пола"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "action",
+      "name": "move_forward",
+      "mode": "hold",
+      "frames": 6,
+      "reason": "короткий шаг вперёд — сместить игрока ~1u для гарантии FocusMinDistance > 1.8u"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "фотоаппарат (слот 0)"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "mouse_button",
+      "button": "left",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 150,
+      "reason": "отсчёт, фото создано"
+    }
+  ],
+  "steps": [
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "активация фото #1"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "открыть для деактивации #1"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "деактивация #1"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "открыть для активации #2"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "активация фото #2"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "открыть для деактивации #2"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "деактивация #2"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    }
+  ],
+  "assertions": [
+    {
+      "kind": "log_order",
+      "patterns": [
+        "\\[Inventory\\] Activate 'photo' → hand \\(slot 0 reserved\\)",
+        "\\[Inventory\\] Deactivate 'photo' → slot 0",
+        "\\[Inventory\\] Activate 'photo' → hand \\(slot 0 reserved\\)",
+        "\\[Inventory\\] Deactivate 'photo' → slot 0"
+      ],
+      "reason": "два полных цикла активация→деактивация подряд"
+    },
+    {
+      "kind": "log_not_contains",
+      "pattern": "\\[Photo\\] Entered → teleported",
+      "reason": "ни в одном из циклов не было входа — телепорта нет"
+    },
+    {
+      "kind": "log_not_contains",
+      "pattern": "\\[Player\\] Teleport →",
+      "reason": "позиция игрока не менялась"
+    }
+  ],
+  "manual_verification_ref": "10-lifecycle.md → TC-F31-04, «Верификация»",
+  "expected_result_summary": "Два цикла активация→деактивация проходят без телепорта и без уничтожения предмета."
+}

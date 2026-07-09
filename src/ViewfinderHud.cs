@@ -19,7 +19,7 @@ public partial class ViewfinderHud : Control
 	[Export] public float FocusMinDistance = 1.8f;  // мин. фокусное = 3 корпуса × 0.6 (F-23)
 	[Export] public float ViewfinderFov = 50.0f;    // суженный FOV объектива (F-21)
 	[Export] public float BlockedDuration = 1.0f;   // сколько показывать «съёмка невозможна»
-	[Export] public float WindowWidthFraction = 0.30f; // ширина окна как доля экрана
+	[Export] public float WindowWidthFraction = 0.15f; // ширина окна как доля экрана (уменьшено ×2)
 
 	private static readonly Color FrameWood  = new(0.12f, 0.08f, 0.04f);
 	private static readonly Color FrameBrass = new(0.72f, 0.58f, 0.28f);
@@ -73,13 +73,13 @@ public partial class ViewfinderHud : Control
 		{
 			_phase = Phase.Counting;
 			_elapsed = 0.0f;
-			GD.Print("[Camera] Viewfinder open, countdown start");
+			GameLog.Print("[Camera] Viewfinder open, countdown start");
 		}
 		else
 		{
 			_phase = Phase.Blocked;
 			_blockedT = 0.0f;
-			GD.Print("[Camera] Focus blocked — too close");
+			GameLog.Print("[Camera] Focus blocked — too close");
 		}
 		Visible = true;
 		QueueRedraw();
@@ -112,7 +112,7 @@ public partial class ViewfinderHud : Control
 		// Counting: фокус проверяется каждый кадр (F-23) — при нарушении сброс без съёмки.
 		if (!FocusDistanceOk())
 		{
-			GD.Print("[Camera] Focus lost during countdown — reset");
+			GameLog.Print("[Camera] Focus lost during countdown — reset");
 			Close();
 			return;
 		}
@@ -120,7 +120,7 @@ public partial class ViewfinderHud : Control
 		_elapsed += dt;
 		if (_elapsed >= TickSeconds * StartCount)
 		{
-			GD.Print("[Camera] Shutter — photo created");
+			GameLog.Print("[Camera] Shutter — photo created");
 			Action fire = _onFire;
 			Close();
 			fire?.Invoke(); // создаёт фото и уничтожает камеру (InventoryHud)

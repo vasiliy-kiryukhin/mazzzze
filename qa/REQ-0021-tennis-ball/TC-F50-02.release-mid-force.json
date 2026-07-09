@@ -1,0 +1,51 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Отпустить ЛКМ после заряда ~0.6 с → бросок с промежуточной силой (lerp(5,11,0.6)≈8.6).",
+  "id": "TC-F50-02",
+  "title": "Отпустить ЛКМ после заряда → бросок с накопленной силой",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-50"], "acceptance": "Отпустить ЛКМ — бросок с силой ≈ времени удержания", "markdown": "20-input-charge-cancel.md", "markdown_anchor": "tc-f50-02" },
+  "categories": ["input", "logic"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 360,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 36, "reason": "удержание ~0.6 с (36 кадров)" },
+    { "type": "wait_frames", "frames": 180, "reason": "дождаться [Throw] land" }
+  ],
+  "assertions": [
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Throw\\] launch force=([0-9.]+)",
+      "regex": true,
+      "capture_group": 1,
+      "min": 7.5,
+      "max": 10.0,
+      "reason": "заряд ~0.6 с → сила ≈ lerp(5,11,0.6)=8.6 (допуск на дискретизацию кадров/тайминга)"
+    },
+    { "kind": "log_contains", "pattern": "\\[Throw\\] land → WorldItem at", "reason": "бросок выполнен и завершён посадкой" },
+    {
+      "kind": "node_property",
+      "path": "/root/Main/Player",
+      "property": "ExternalSpeedFactor",
+      "equals": 1.0,
+      "at": "end",
+      "reason": "после броска скорость восстановлена"
+    }
+  ],
+  "manual_verification_ref": "20-input-charge-cancel.md → TC-F50-02, «Верификация»",
+  "expected_result_summary": "Сила броска ≈ 8.6 (между мин и макс); ExternalSpeedFactor=1.0 после броска."
+}

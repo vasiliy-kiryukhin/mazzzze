@@ -1,0 +1,44 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Единая модель base_ball.glb одного размера (BallSize=0.2) в руке/полёте/на полу. Регрессия ×2.5 (рука 0.18 vs снаряд 0.45).",
+  "id": "TC-VIS-01",
+  "title": "Единая модель во всех состояниях (мир / рука / снаряд)",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-47"], "acceptance": "Модель base_ball.glb единая; размер не меняется", "markdown": "50-visual.md", "markdown_anchor": "tc-vis-01" },
+  "categories": ["visual"],
+  "scene": "res://main.tscn",
+  "run": { "headless": false, "display": ":0" },
+  "max_duration_frames": 420,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "screenshot"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "screenshot", "path": "/tmp/tc-vis-01-A-hand.png", "reason": "A: мяч в руке" },
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 40, "reason": "бросок" },
+    { "type": "wait_frames", "frames": 12 },
+    { "type": "screenshot", "path": "/tmp/tc-vis-01-B-flight.png", "reason": "B: мяч в полёте (снаряд)" },
+    { "type": "wait_frames", "frames": 160, "reason": "дождаться land" },
+    { "type": "screenshot", "path": "/tmp/tc-vis-01-C-landed.png", "reason": "C: мяч лежит (WorldItem)" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Throw\\] land → WorldItem at", "reason": "переход в WorldItem состоялся" },
+    {
+      "kind": "manual_visual_check",
+      "description": "На скриншотах A/B/C — одна и та же модель base_ball.glb одинакового диаметра (BallSize=0.2). Рука/полёт/лежащий — одного размера (регрессия ×2.5 недопустима).",
+      "md_ref": "50-visual.md → TC-VIS-01",
+      "screenshots": ["/tmp/tc-vis-01-A-hand.png", "/tmp/tc-vis-01-B-flight.png", "/tmp/tc-vis-01-C-landed.png"]
+    }
+  ],
+  "manual_verification_ref": "50-visual.md → TC-VIS-01, «Верификация»",
+  "expected_result_summary": "Модель и размер идентичны во всех трёх состояниях."
+}

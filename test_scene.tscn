@@ -1,0 +1,204 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://byfouqc6xrykn" path="res://player.tscn" id="1_player"]
+[ext_resource type="Script" path="res://src/InventoryHud.cs" id="2_inventory"]
+[ext_resource type="Script" path="res://src/ViewfinderHud.cs" id="3_viewfinder"]
+[ext_resource type="Script" path="res://src/PhotoEnterHud.cs" id="4_photoenter"]
+[ext_resource type="Script" path="res://src/ChunkManager.cs" id="5_chunkmgr"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_floor"]
+noise_type = 3
+frequency = 0.03
+fractal_octaves = 4
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_floor_n"]
+width = 256
+height = 256
+noise = SubResource("FastNoiseLite_floor")
+seamless = true
+as_normal_map = true
+bump_strength = 1.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.2, 0.19, 0.18, 1)
+metallic_specular = 0.6
+roughness = 0.4
+normal_enabled = true
+normal_scale = 0.6
+normal_texture = SubResource("NoiseTexture2D_floor_n")
+uv1_scale = Vector3(0.12, 0.12, 0.12)
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[sub_resource type="Gradient" id="Gradient_wall"]
+offsets = PackedFloat32Array(0, 0.4, 0.7, 1)
+colors = PackedColorArray(0.035, 0.03, 0.026, 1, 0.11, 0.095, 0.08, 1, 0.22, 0.19, 0.16, 1, 0.34, 0.3, 0.25, 1)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_wall"]
+noise_type = 3
+frequency = 0.05
+fractal_octaves = 6
+fractal_lacunarity = 2.3
+fractal_gain = 0.55
+domain_warp_enabled = true
+domain_warp_type = 1
+domain_warp_amplitude = 12.0
+domain_warp_frequency = 0.02
+domain_warp_fractal_octaves = 3
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_wall_a"]
+noise = SubResource("FastNoiseLite_wall")
+color_ramp = SubResource("Gradient_wall")
+seamless = true
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_wall_n"]
+noise = SubResource("FastNoiseLite_wall")
+seamless = true
+as_normal_map = true
+bump_strength = 4.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
+albedo_texture = SubResource("NoiseTexture2D_wall_a")
+metallic_specular = 0.18
+roughness = 0.92
+normal_enabled = true
+normal_scale = 1.8
+normal_texture = SubResource("NoiseTexture2D_wall_n")
+uv1_scale = Vector3(0.14, 0.06, 0.14)
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+material = SubResource("StandardMaterial3D_floor")
+size = Vector3(50, 0.2, 50)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(50, 0.2, 50)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_ns"]
+material = SubResource("StandardMaterial3D_wall")
+size = Vector3(52, 30, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_ns"]
+size = Vector3(52, 30, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_ew"]
+material = SubResource("StandardMaterial3D_wall")
+size = Vector3(1, 30, 52)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_ew"]
+size = Vector3(1, 30, 52)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.04, 0.05, 0.08, 1)
+sky_horizon_color = Color(0.5, 0.42, 0.32, 1)
+sky_curve = 0.09
+sky_energy_multiplier = 0.85
+ground_bottom_color = Color(0.04, 0.04, 0.05, 1)
+ground_horizon_color = Color(0.2, 0.17, 0.14, 1)
+ground_energy_multiplier = 0.4
+sun_angle_max = 42.0
+sun_curve = 0.12
+
+[sub_resource type="Sky" id="Sky_env"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_env")
+ambient_light_source = 2
+ambient_light_color = Color(0.4, 0.45, 0.6, 1)
+ambient_light_energy = 0.6
+reflected_light_source = 1
+tonemap_mode = 3
+tonemap_white = 6.0
+glow_enabled = true
+glow_intensity = 0.7
+glow_strength = 1.15
+glow_bloom = 0.2
+glow_hdr_threshold = 0.95
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_main"]
+
+[node name="Main" type="Node3D"]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -0.743, -0.669, 0, 0.669, -0.743, 0, 40, -20)
+light_color = Color(1, 0.88, 0.72, 1)
+light_energy = 2.4
+light_specular = 1.0
+light_angular_distance = 5.0
+shadow_enabled = true
+directional_shadow_mode = 2
+directional_shadow_max_distance = 120.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+camera_attributes = SubResource("CameraAttributesPractical_main")
+
+[node name="ChunkManager" type="Node3D" parent="."]
+script = ExtResource("5_chunkmgr")
+
+[node name="Room" type="Node3D" parent="."]
+
+[node name="Floor" type="StaticBody3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/Floor"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/Floor"]
+mesh = SubResource("BoxMesh_floor")
+
+[node name="WallN" type="StaticBody3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15, -25)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/WallN"]
+shape = SubResource("BoxShape3D_wall_ns")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/WallN"]
+mesh = SubResource("BoxMesh_wall_ns")
+
+[node name="WallS" type="StaticBody3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15, 25)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/WallS"]
+shape = SubResource("BoxShape3D_wall_ns")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/WallS"]
+mesh = SubResource("BoxMesh_wall_ns")
+
+[node name="WallE" type="StaticBody3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 15, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/WallE"]
+shape = SubResource("BoxShape3D_wall_ew")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/WallE"]
+mesh = SubResource("BoxMesh_wall_ew")
+
+[node name="WallW" type="StaticBody3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 15, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/WallW"]
+shape = SubResource("BoxShape3D_wall_ew")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/WallW"]
+mesh = SubResource("BoxMesh_wall_ew")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, -10)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Inventory" type="Control" parent="HUD"]
+mouse_filter = 2
+script = ExtResource("2_inventory")
+
+[node name="Viewfinder" type="Control" parent="HUD"]
+mouse_filter = 2
+script = ExtResource("3_viewfinder")
+
+[node name="PhotoEnter" type="Control" parent="HUD"]
+mouse_filter = 2
+script = ExtResource("4_photoenter")

@@ -1,0 +1,22 @@
+[90] [MazeData] region 15x15 block cells, seed=92777176, entrance=(11, 3), exit=(7, 13), offset=(-27, -27)
+[90] [Player] Start cell=(11,3) world=(14.4, 0.3, -14.4)
+[90] [ChunkManager] Ready — chunkSize=16, loadDistance=1
+[90] [Inventory] Seeded 2/12 items
+[90] [ChunkManager] LOAD   chunk (-1,-1)  size=58x58  world=(-85,-85)  totalActive=1
+[90] [ChunkManager] LOAD   chunk (-1,0)  size=58x58  world=(-85,-27)  totalActive=2
+[90] [ChunkManager] LOAD   chunk (-1,1)  size=58x58  world=(-85,31)  totalActive=3
+[90] [ChunkManager] LOAD   chunk (0,-1)  size=58x58  world=(-27,-85)  totalActive=4
+[90] [ChunkManager] LOAD   chunk (0,0)  size=58x58  world=(-27,-27)  totalActive=5
+[90] [ChunkManager] LOAD   chunk (0,1)  size=58x58  world=(-27,31)  totalActive=6
+[90] [ChunkManager] LOAD   chunk (1,-1)  size=58x58  world=(31,-85)  totalActive=7
+[90] [ChunkManager] LOAD   chunk (1,0)  size=58x58  world=(31,-27)  totalActive=8
+[90] [ChunkManager] LOAD   chunk (1,1)  size=58x58  world=(31,31)  totalActive=9
+[90] [Monster] Spawn 'ifrit' cell=(1, 6) seg=[(0, 0)..(16, 16))
+[90] [Monster] Spawn 'ifrit' cell=(12, 7) seg=[(0, 0)..(16, 16))
+[90] [Monster] Spawn 'ifrit' cell=(3, 8) seg=[(0, 0)..(16, 16))
+[90] [MonsterSpawner] Spawned 3 Ifrit near start (11, 3)
+[137] [Inventory] Activate 'vintage_camera' → hand (slot 0 reserved)
+[160] [Camera] Focus blocked — too close
+[322] [Inventory] Deactivate 'vintage_camera' → slot 0
+[411] [Inventory] Activate 'vintage_camera' → hand (slot 0 reserved)
+[445] [Inventory] Deactivate 'vintage_camera' → slot 0

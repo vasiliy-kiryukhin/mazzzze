@@ -1,0 +1,47 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Бросок при стрейфе: направление = yaw камеры в момент выпуска, а не вектор скорости игрока.",
+  "id": "TC-REG-05",
+  "title": "Бросок с движением — направление остаётся по yaw камеры",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-48", "F-50"], "acceptance": "Направление броска = yaw камеры (не направление движения)", "markdown": "60-edge-regression.md", "markdown_anchor": "tc-reg-05" },
+  "categories": ["logic"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 420,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "node_property_read"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "aim_camera", "yaw_deg": 0.0, "reason": "фиксированный yaw" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "node_property", "path": "/root/Main/Player", "property": "CameraYawForward", "capture_as": "fwd_strafe" },
+    { "type": "action", "name": "use_activated", "mode": "press", "reason": "зажать ЛКМ" },
+    { "type": "action", "name": "move_right", "mode": "press", "reason": "стрейф вбок во время заряда" },
+    { "type": "wait_frames", "frames": 40 },
+    { "type": "action", "name": "move_right", "mode": "release" },
+    { "type": "action", "name": "use_activated", "mode": "release", "reason": "выпуск при стрейфе" },
+    { "type": "wait_frames", "frames": 200, "reason": "дождаться land" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Throw\\] launch force=([0-9.]+) dir=\\(([0-9.\\-]+),([0-9.\\-]+)\\)", "regex": true, "reason": "выпуск с направлением" },
+    {
+      "kind": "manual_visual_check",
+      "description": "dir=(x,z) из лога сонаправлен сохранённому CameraYawForward (fwd_strafe), а не вектору стрейфа. Мяч летит «куда смотрит камера», даже если игрок двигался вбок.",
+      "md_ref": "60-edge-regression.md → TC-REG-05",
+      "captures": ["fwd_strafe"]
+    }
+  ],
+  "manual_verification_ref": "60-edge-regression.md → TC-REG-05, «Верификация»",
+  "expected_result_summary": "Направление броска = yaw камеры (не зависит от стрейфа)."
+}

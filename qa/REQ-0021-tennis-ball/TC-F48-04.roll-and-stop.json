@@ -1,0 +1,56 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Качение по полу и остановка (GroundFriction, StopThreshold, StopTime) → переход в WorldItem. Не дрожит на пороге.",
+  "id": "TC-F48-04",
+  "title": "Качение по полу и остановка → переход в WorldItem",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-48"], "acceptance": "После отскоков мяч катится и останавливается → становится WorldItem", "markdown": "30-throw-physics.md", "markdown_anchor": "tc-f48-04" },
+  "categories": ["logic"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 480,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 45, "reason": "бросок вдоль коридора" },
+    { "type": "wait_frames", "frames": 260, "reason": "дождаться качения и [Throw] land (StopThreshold 0.9, StopTime 0.2)" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Throw\\] land → WorldItem at", "reason": "мяч остановился и стал лежащим предметом" },
+    {
+      "kind": "node_by_type",
+      "parent": "/root/Main",
+      "type": "WorldItem",
+      "count_min": 1,
+      "count_max": 1,
+      "at": "end",
+      "reason": "ровно один лежащий мяч"
+    },
+    {
+      "kind": "node_by_type",
+      "parent": "/root/Main",
+      "type": "ThrowProjectile",
+      "count_max": 0,
+      "at": "end",
+      "reason": "снаряд погашен после остановки"
+    },
+    {
+      "kind": "manual_visual_check",
+      "description": "Лежащий мяч неподвижен, не «дрожит» и не ползёт на пороге остановки.",
+      "md_ref": "30-throw-physics.md → TC-F48-04"
+    }
+  ],
+  "manual_verification_ref": "30-throw-physics.md → TC-F48-04, «Верификация»",
+  "expected_result_summary": "log land → WorldItem; ровно один WorldItem; ThrowProjectile удалён; мяч неподвижен."
+}

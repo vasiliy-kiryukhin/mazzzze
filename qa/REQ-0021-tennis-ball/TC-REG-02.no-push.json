@@ -1,0 +1,53 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Снаряд не толкает игрока и монстров (CollisionLayer=0): при пролёте/отскоке рядом модели не сдвигаются.",
+  "id": "TC-REG-02",
+  "title": "Снаряд не толкает игрока и монстров (CollisionLayer=0)",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-48"], "acceptance": "Снаряд не передаёт импульс (кинематический, слой 0)", "markdown": "60-edge-regression.md", "markdown_anchor": "tc-reg-02" },
+  "categories": ["logic", "visual"],
+  "scene": "res://main.tscn",
+  "run": { "headless": false, "display": ":0" },
+  "flaky": true,
+  "retry": 3,
+  "on_no_setup": "skip",
+  "setup_strategy": "Бросить мяч так, чтобы траектория прошла рядом с монстром/игроком (но не в тело). Наблюдать отсутствие отброса.",
+  "max_duration_frames": 480,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "screenshot"],
+  "preconditions": ["Мяч активирован; рядом есть монстр"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 50, "reason": "бросок" },
+    { "type": "screenshot", "path": "/tmp/tc-reg-02-pass.png", "reason": "мяч пролетает/отскакивает рядом" },
+    { "type": "wait_frames", "frames": 200, "reason": "дождаться land" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Throw\\] land → WorldItem at", "reason": "бросок завершён" },
+    {
+      "kind": "node_by_type",
+      "parent": "/root/Main",
+      "type": "Ifrit",
+      "count_min": 1,
+      "at": "end",
+      "reason": "монстр присутствует (не уничтожен, не «отлетел»)"
+    },
+    {
+      "kind": "manual_visual_check",
+      "description": "При пролёте/отскоке мяча рядом с игроком/монстром — модели не сдвигаются, не отшатываются (импульс не передаётся).",
+      "md_ref": "60-edge-regression.md → TC-REG-02",
+      "screenshot": "/tmp/tc-reg-02-pass.png"
+    }
+  ],
+  "manual_verification_ref": "60-edge-regression.md → TC-REG-02, «Верификация»",
+  "expected_result_summary": "Мяч никого не толкает; игрок/монстры не сдвигаются импульсом."
+}

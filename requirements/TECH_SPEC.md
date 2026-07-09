@@ -88,10 +88,11 @@ maze-prototype-1/
     ├── InventoryHud.cs        # Item system hub (Control): states, transitions, input, draw
     ├── WorldItem.cs           # InWorld item representation + registry
     ├── DropProjectile.cs      # Drop star (inventory → world)
+    ├── ThrowProjectile.cs     # Tennis-ball projectile (kinematic CharacterBody3D, MoveAndCollide bounces, monster hit)
     ├── PickupProjectile.cs    # Pickup star (world → inventory)
     ├── ItemStar.cs            # Shared emissive star visual
     ├── ViewfinderHud.cs       # Vintage-camera viewfinder + timer + focus (Control)
-    ├── PhotoEnterHud.cs       # Photo walk-into progress vignette + teleport flash (Control)
+    ├── PhotoEnterHud.cs       # Photo walk-into live window (light ramps up = "comes alive") + yellow teleport flicker (Control)
     ├── Monster.cs             # Base monster template: perception, FSM, pathfinding, contact (US-19)
     ├── Ifrit.cs              # First concrete monster: fiery humanoid, contact (US-20)
     ├── MonsterSpawner.cs      # Minimal debug spawner (places Ifrit near start)
@@ -126,7 +127,7 @@ Main (Node3D)                              - main.tscn, root
     ├── Minimap (Control + Minimap.cs)    - top-left mini-map overlay (§5.10)
     ├── Inventory (Control + InventoryHud.cs) - bottom-right inventory + item-system hub (§5.11)
     ├── Viewfinder (Control + ViewfinderHud.cs) - camera viewfinder overlay (§5.11)
-    ├── PhotoEnter (Control + PhotoEnterHud.cs) - photo walk-into vignette/flash (§5.11)
+    ├── PhotoEnter (Control + PhotoEnterHud.cs) - photo walk-into window/yellow flicker (§5.11)
     └── DamageFlash (Control + DamageHud.cs) - red hit-flash (created by spawner) (§5.8)
 ```
 
@@ -391,9 +392,14 @@ The +CellWorldSize/2 centres the player within the cell: with cell_center_x/z=tr
 | move_back | S(83), DownArrow(4194376) | - | Button 4 |
 | jump | Space(32) | - | Button 0 |
 | minimap_toggle | Tab(4194306) | - | - |
+| inventory_toggle | I(73) | - | - |
+| use_activated | Mouse button 1 (LMB) | - | - |
+| throw_cancel | Mouse button 2 (RMB) | - | - |
 
-Dead zone: 0.2 (0.5 for minimap_toggle). Mouse captured (Input.MouseMode = Captured).
-Mouse wheel zooms the camera (plain) or the mini-map (with Ctrl held) — see §5.9.
+Dead zone: 0.2 (0.5 for minimap_toggle / use_activated / throw_cancel). Mouse captured
+(Input.MouseMode = Captured). `use_activated` (LMB) uses the camera / holds-to-charge the tennis-ball
+throw (§5.11); `throw_cancel` (RMB) aborts a ball charge. Mouse wheel zooms the camera (plain) or the
+mini-map (with Ctrl held) — see §5.9.
 
 ### 5.6 Ground - Floor Collision
 
@@ -443,7 +449,7 @@ Ground collision spans Y=[-1.0, 0.0]. Top surface at Y=0. Provides flat floor ac
 
 **`MonsterSpawner`** (`Main/MonsterSpawner`) — minimal **debug** spawner: places a few Ifrit near the player start and creates the `DamageHud`. A real spawner is a future feature.
 
-**Not implemented / hooks:** `Stun()` is public but has no trigger yet (future tennis ball, IDEA-0025); distraction reacts to any `WorldItem` (no dedicated lure type); Ranged delivery, Small size, player health system, and a death state (the `Death` clip is unused) are future. The old `Mob.cs`/`mob.tscn` charge stub is **superseded** (present, unused).
+**Not implemented / hooks:** `Stun()` is triggered by the tennis-ball throw (REQ-0021, §5.11) on a direct hit by a monster that saw the throw; `SeesPlayerNow()` exposes perception for the aware-at-throw check. Distraction reacts to any `WorldItem` (no dedicated lure type) — the thrown ball uses this once it settles. Ranged delivery, Small size, player health system, and a death state (the `Death` clip is unused) are future. The old `Mob.cs`/`mob.tscn` charge stub is **superseded** (present, unused).
 
 ### 5.9 Art Assets
 
@@ -545,20 +551,60 @@ clip, `PickUpAnim`), which overrides locomotion until it finishes.
 in `_PhysicsProcess`. It draws a framed **window above the player's head** (screen-projected
 `Player.HeadAnchor`; **third-person view kept, no darken**) containing a `SubViewport`
 (`World3D = player.GetWorld3D()`) + eye-level `Camera3D` rendering a **horizontal (level, yaw)**
-lens view. Focus (F-23) = a forward horizontal ray, min `FocusMinDistance` 1.8 (3×0.6); blocked
-before start or lost mid-count resets without consuming. Timer (F-22) 3→2→1 at `TickSeconds` 2.
+lens view. The window is small — `WindowWidthFraction` 0.15 of the screen (halved) so it barely
+occludes the third-person scene. Focus (F-23) = a forward horizontal ray, min `FocusMinDistance`
+1.8 (3×0.6); blocked before start or lost mid-count resets without consuming. Timer (F-22) 3→2→1
+at `TickSeconds` 0.6667.
 Mouse pitch stays free (third-person). On fire → `InventoryHud.OnCameraFired` builds a
 `PhotoItem` and `ConsumeActivated`s the camera into its reserved slot.
 
 **Photo (REQ-0017):** `PhotoItem` stores immutable `CapturedWorldPos` (XZ), `CapturedYawDeg`,
 `CapturedPitchDeg` (the main top-down camera's pitch, so the normal view is preserved after
 teleport). Activating it opens `PhotoEnterHud.BeginPreview`: a `SubViewport` `Camera3D` parked at
-`CapturedWorldPos`/yaw renders that location **live** (a passing monster shows) in a window above
-the head. `InventoryHud.UpdatePhotoEnter` accumulates progress while the photo is activated,
-`move_forward` is held, and `Velocity·PlanarCamForward > Speed*0.4` (real advance, not wall-
-blocked); the window **grows** toward centre. At `EnterDuration` 2 s → `Player.TeleportTo(pos,
-yaw, pitch)` (stands on floor at Y=0.3, re-streams chunks), `PhotoEnterHud.Flash()` (sepia),
-`ConsumeActivated(null)`. Live preview is limited to currently-streamed chunks.
+`CapturedWorldPos`/yaw renders that location **live and full-colour** (a passing monster shows;
+monochrome/sepia removed) in a centred window. The preview **comes alive** as you walk in: the
+`Camera3D.Environment` carries a warm ambient fill (`AmbientLightSource=Color`, `AmbientLightColor`
+matching the player HeadLight) whose energy is ramped each frame by entry progress —
+`AmbientLightEnergy = Lerp(AmbientEnergyMin 0.2, AmbientEnergyMax 1.6, Progress)`. At progress 0
+the shot is dim ("sleeping"); as you advance it lights up, so by teleport the window already
+matches on-site lighting and there's no dark-to-bright jump. A real world `OmniLight3D` can't be
+used: the `SubViewport` shares the game `World3D` (for live monsters) so a world light would leak
+into the main view; the per-camera Environment stays local. `InventoryHud.UpdatePhotoEnter` accumulates
+progress while the photo is activated, `move_forward` is held, and `Velocity·PlanarCamForward >
+Speed*0.4` (real advance, not wall-blocked); the window **grows** toward centre. At
+`EnterDuration` 1.3333 s → `Player.TeleportTo(pos, yaw, pitch)` (stands on floor at Y=0.3,
+re-streams chunks), `PhotoEnterHud.Flash()` (a **light transparent yellow flicker** —
+`FlashMaxAlpha` 0.35 × decaying sine, `FlashFlickers` 3), `ConsumeActivated(null)`. Live preview
+is limited to currently-streamed chunks.
+
+**Tennis ball (REQ-0021):** first **reusable** item (never consumed) and first **real physical
+projectile**. A plain `Item` (`TypeId "tennis_ball"`, `Usage ActivatedB`, `art/base_ball.glb`),
+seeded into slot 1. Activated → the ball model shows in the player's hand via a **`BoneAttachment3D`
+on the `RightHand` bone** (`Player.ShowHandItem`, skeleton `ModelPivot/Character/Rig/GeneralSkeleton`),
+so it follows the animation at any camera angle (an earlier fixed `ModelPivot` offset looked detached
+and was replaced). **Charge/throw** (`InventoryHud`, dispatched by `TypeId` in `_Input`): hold
+`use_activated` (LMB) starts a charge (`_chargeT` accrues in `UpdateThrowCharge`, plateaus at
+`MaxChargeTime`, slows the player via `Player.ExternalSpeedFactor = MoveSpeedFactorWhileCharging`,
+pulses the hand model); release throws (`ThrowActivated` → `force = lerp(MinThrowForce, MaxThrowForce,
+chargeT/MaxChargeTime)`, `dir = Player.CameraYawForward`, spawned at `Player.HandThrowOrigin` — the ball's
+world position in the hand — so it leaves the hand, not the back); `throw_cancel` (RMB) aborts. Throw is a
+new `Activated → InWorld` transition: the slot frees like `DropActivated` **but the item is not consumed**
+— it rides the projectile and returns via auto-pickup. `ThrowProjectile` (`src/ThrowProjectile.cs`) is a
+**kinematic `CharacterBody3D`** driven by `MoveAndCollide` (not `RigidBody3D` — that version tunnelled
+through the thin floor/walls, floated on engine gravity 9.8, and bounced endlessly in the narrow
+corridor): manual `Gravity` 15 (game-matched), `LinearDamp`, and **normal-reflection** bounce
+(`Restitution` 0.5 on the normal component, `ImpactFriction` on the tangential), swept motion so no
+tunnelling; a `GroundFriction` roll-friction on floor contact stops it crisply (no low-speed creep).
+Layer 0 / mask 1. **Monster hit is by proximity, not layer** (monsters share layer 1 with
+walls): `NearestMonsterHit` checks planar distance ≤ `_hitRadius` and body-height overlap against
+`Monster.All`; on hit, if the monster was in the throw's `aware` set (built at release from
+`Monster.SeesPlayerNow()`) → `monster.Stun()` (F-49 branch A), then `Land()` (one target, no piercing).
+Stop (velocity < `StopThreshold` for `StopTime`) or the `MaxAirborneTime` safety → `Land()` spawns a
+`WorldItem` at `(x, y−radius, z)` — the ball's resting height — so the projectile→item handoff is
+seamless (no sink or sideways jerk). The ball uses a single physical size `BallSize` in hand, flight, and
+world (`WorldHeightFor` returns it for `tennis_ball`) so it never changes size on landing. **Distraction (branch B) needs no ball-specific code:** once the ball is a
+`WorldItem`, the monster's existing `FindVisibleLure`/`Distract` notices it. A ball in flight is not yet a
+lure (only after it settles).
 
 ## 6. Physics Configuration
 

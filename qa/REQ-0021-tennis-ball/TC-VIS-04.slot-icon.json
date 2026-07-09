@@ -1,0 +1,33 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Иконка слота инвентаря — рендер модели мячика (BuildModel в SubViewport).",
+  "id": "TC-VIS-04",
+  "title": "Иконка слота инвентаря — рендер модели мячика",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-47"], "acceptance": "Иконка слота = рендер base_ball.glb (F-16)", "markdown": "50-visual.md", "markdown_anchor": "tc-vis-04" },
+  "categories": ["visual", "ui"],
+  "scene": "res://main.tscn",
+  "run": { "headless": false, "display": ":0" },
+  "max_duration_frames": 180,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "screenshot"],
+  "preconditions": ["Мяч в инвентаре (слот 1)"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap", "reason": "открыть инвентарь" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "screenshot", "path": "/tmp/tc-vis-04-inventory.png", "reason": "иконки слотов" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Inventory\\] Seeded 2/12 items", "reason": "мяч засеян — иконка должна быть построена" },
+    {
+      "kind": "manual_visual_check",
+      "description": "В ячейке ряд 1 / колонка 2 — иконка мячика (рендер base_ball.glb), читаемая и вписанная в ячейку; не пусто, не заглушка.",
+      "md_ref": "50-visual.md → TC-VIS-04",
+      "screenshot": "/tmp/tc-vis-04-inventory.png"
+    }
+  ],
+  "manual_verification_ref": "50-visual.md → TC-VIS-04, «Верификация»",
+  "expected_result_summary": "Иконка мячика присутствует во 2-й ячейке первого ряда."
+}

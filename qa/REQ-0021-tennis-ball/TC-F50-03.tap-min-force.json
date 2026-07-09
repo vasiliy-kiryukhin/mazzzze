@@ -1,0 +1,43 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Короткий тап ЛКМ → бросок с минимальной силой (≈ MinThrowForce=5.0).",
+  "id": "TC-F50-03",
+  "title": "Короткий тап ЛКМ → минимальная сила",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-50"], "acceptance": "Короткий тап → бросок с минимальной силой", "markdown": "20-input-charge-cancel.md", "markdown_anchor": "tc-f50-03" },
+  "categories": ["input"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 360,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "tap", "reason": "короткий тап (<0.1 с)" },
+    { "type": "wait_frames", "frames": 200, "reason": "дождаться land" }
+  ],
+  "assertions": [
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Throw\\] launch force=([0-9.]+)",
+      "regex": true,
+      "capture_group": 1,
+      "min": 5.0,
+      "max": 5.4,
+      "reason": "тап → сила ≈ MinThrowForce=5.0"
+    },
+    { "kind": "log_contains", "pattern": "\\[Throw\\] land → WorldItem at", "reason": "бросок завершён" }
+  ],
+  "manual_verification_ref": "20-input-charge-cancel.md → TC-F50-03, «Верификация»",
+  "expected_result_summary": "Сила броска ≈ 5.0 (меньше, чем при полном/среднем заряде)."
+}

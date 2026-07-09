@@ -1,0 +1,47 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Отскок от стен с потерей энергии (Restitution=0.5). Бросок под углом к стене; серия скриншотов.",
+  "id": "TC-F48-03",
+  "title": "Отскок от стен с потерей энергии",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-48"], "acceptance": "Мяч отскакивает от стен с потерей энергии", "markdown": "30-throw-physics.md", "markdown_anchor": "tc-f48-03" },
+  "categories": ["visual", "logic"],
+  "scene": "res://main.tscn",
+  "run": { "headless": false, "display": ":0" },
+  "max_duration_frames": 420,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "screenshot"],
+  "preconditions": ["Мяч активирован в руку; рядом стена под углом"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "aim_camera", "yaw_deg": 40.0, "reason": "прицелить под углом к стене/коридору" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 50, "reason": "бросок в стену" },
+    { "type": "screenshot", "path": "/tmp/tc-f48-03-bounce1.png" },
+    { "type": "wait_frames", "frames": 15 },
+    { "type": "screenshot", "path": "/tmp/tc-f48-03-bounce2.png" },
+    { "type": "wait_frames", "frames": 15 },
+    { "type": "screenshot", "path": "/tmp/tc-f48-03-bounce3.png", "reason": "последовательные отскоки ниже/короче" },
+    { "type": "wait_frames", "frames": 150, "reason": "дождаться land" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Throw\\] land → WorldItem at", "reason": "после отскоков мяч остановился" },
+    {
+      "kind": "manual_visual_check",
+      "description": "После удара о стену мяч отлетает по отражённой траектории; каждый следующий отскок короче/ниже предыдущего (потеря энергии). Мяч не проходит сквозь стену и не прилипает.",
+      "md_ref": "30-throw-physics.md → TC-F48-03",
+      "screenshots": ["/tmp/tc-f48-03-bounce1.png", "/tmp/tc-f48-03-bounce2.png", "/tmp/tc-f48-03-bounce3.png"]
+    }
+  ],
+  "manual_verification_ref": "30-throw-physics.md → TC-F48-03, «Верификация»",
+  "expected_result_summary": "Мяч отражается от стены с потерей энергии и в итоге останавливается (land)."
+}

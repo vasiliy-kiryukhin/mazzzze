@@ -1,0 +1,193 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Активация фотографии в руку (InInventory → Activated, паттерн B), слот бронируется.",
+  "id": "TC-F31-02",
+  "title": "Активация фотографии в руку (InInventory → Activated, паттерн B)",
+  "requirement": {
+    "feature": "REQ-0017-photo",
+    "functional": [
+      "F-31"
+    ],
+    "acceptance": "Фотография активируется по паттерну B, слот бронируется (F-19a)",
+    "markdown": "10-lifecycle.md",
+    "markdown_anchor": "tc-f31-02"
+  },
+  "categories": [
+    "logic"
+  ],
+  "scene": "res://test_scene.tscn",
+  "run": {
+    "headless": true,
+    "display": ":0"
+  },
+  "max_duration_frames": 416,
+  "harness_requirements": [
+    "capture_gd_print",
+    "input_simulation",
+    "frame_advance"
+  ],
+  "preconditions": [
+    "Свежий запуск main.tscn; камера засеяна в слот 0"
+  ],
+  "setup": [
+    {
+      "type": "wait_frames",
+      "frames": 90,
+      "reason": "инициализация мира и инвентаря"
+    },
+    {
+      "type": "mouse_motion",
+      "dx": 0,
+      "dy": -20,
+      "reason": "слегка опустить камеру — смотреть вдоль пола"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "action",
+      "name": "move_forward",
+      "mode": "hold",
+      "frames": 6,
+      "reason": "короткий шаг вперёд — сместить игрока ~1u для гарантии FocusMinDistance > 1.8u"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "открыть инвентарь"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "выбрать ряд 1"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "колонка 1 → активировать фотоаппарат (слот 0)"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "закрыть инвентарь, камера активирована"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "mouse_button",
+      "button": "left",
+      "mode": "tap",
+      "reason": "ЛКМ — открыть видоискатель, начать отсчёт"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 150,
+      "reason": "отсчёт 3→2→1 (TickSeconds=0.6667×3=2.0с + запас), фотография создана в слоте 0"
+    }
+  ],
+  "steps": [
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "открыть инвентарь"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "выбрать ряд 1"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "колонка 1 → активировать фотографию (слот 0)"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "закрыть инвентарь"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "screenshot",
+      "path": "/tmp/tc-f31-02-photo-hand.png",
+      "reason": "фото активировано — окно вида по центру экрана"
+    }
+  ],
+  "assertions": [
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Inventory\\] Seeded 2/12 items",
+      "after_step": "setup"
+    },
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Camera\\] Shutter — photo created",
+      "reason": "камера сработала, фотография создана",
+      "after_step": "setup"
+    },
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Camera\\] Photo created at \\(.+\\, .+\\) yaw=\\d+ → slot 0",
+      "regex": true,
+      "reason": "фото в слоте 0",
+      "after_step": "setup"
+    },
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Inventory\\] Activate 'photo' → hand \\(slot 0 reserved\\)",
+      "reason": "фотография активирована, слот 0 забронирован",
+      "after_step": 4
+    },
+    {
+      "kind": "manual_visual_check",
+      "description": "По центру экрана — живое окно вида запечатлённой точки с рамкой (дерево+латунь).",
+      "md_ref": "10-lifecycle.md → TC-F31-02",
+      "screenshot": "/tmp/tc-f31-02-photo-hand.png"
+    }
+  ],
+  "manual_verification_ref": "10-lifecycle.md → TC-F31-02, «Верификация»",
+  "expected_result_summary": "Лог Activate 'photo' → hand (slot 0 reserved); окно вида запечатлённой точки по центру экрана."
+}

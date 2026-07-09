@@ -1,0 +1,216 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Деактивация фотографии (Activated → InInventory): возврат в слот, окно исчезает, прогресс сброшен.",
+  "id": "TC-F31-03",
+  "title": "Деактивация возвращает фотографию в слот (Activated → InInventory)",
+  "requirement": {
+    "feature": "REQ-0017-photo",
+    "functional": [
+      "F-31"
+    ],
+    "acceptance": "Фотография возвращается в забронированный слот при деактивации, не уничтожается",
+    "markdown": "10-lifecycle.md",
+    "markdown_anchor": "tc-f31-03"
+  },
+  "categories": [
+    "logic"
+  ],
+  "scene": "res://test_scene.tscn",
+  "run": {
+    "headless": true,
+    "display": ":0"
+  },
+  "max_duration_frames": 516,
+  "harness_requirements": [
+    "capture_gd_print",
+    "input_simulation",
+    "frame_advance"
+  ],
+  "preconditions": [
+    "Фотография создана в слоте 0 (setup)"
+  ],
+  "setup": [
+    {
+      "type": "wait_frames",
+      "frames": 90,
+      "reason": "инициализация мира и инвентаря"
+    },
+    {
+      "type": "mouse_motion",
+      "dx": 0,
+      "dy": -20,
+      "reason": "слегка опустить камеру — смотреть вдоль пола"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "action",
+      "name": "move_forward",
+      "mode": "hold",
+      "frames": 6,
+      "reason": "короткий шаг вперёд — сместить игрока ~1u для гарантии FocusMinDistance > 1.8u"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "ряд 1"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "колонка 1 → фотоаппарат (слот 0)"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "mouse_button",
+      "button": "left",
+      "mode": "tap",
+      "reason": "ЛКМ — видоискатель + отсчёт"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 150,
+      "reason": "отсчёт ~2.0с, фото создано в слоте 0"
+    }
+  ],
+  "steps": [
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "открыть инвентарь"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "активировать фотографию (слот 0)"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "закрыть инвентарь, фото в руке"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "открыть инвентарь для деактивации"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "повторный выбор слота 0 → toggle деактивации"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "закрыть инвентарь"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    }
+  ],
+  "assertions": [
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Inventory\\] Activate 'photo' → hand \\(slot 0 reserved\\)",
+      "reason": "фото активировано",
+      "after_step": 4
+    },
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Inventory\\] Deactivate 'photo' → slot 0",
+      "reason": "фото деактивировано, вернулось в слот",
+      "after_step": 9
+    },
+    {
+      "kind": "log_not_contains",
+      "pattern": "\\[Photo\\] Entered → teleported",
+      "reason": "при деактивации без входа телепорта нет"
+    },
+    {
+      "kind": "log_not_contains",
+      "pattern": "\\[Player\\] Teleport →",
+      "reason": "телепорта не было"
+    }
+  ],
+  "manual_verification_ref": "10-lifecycle.md → TC-F31-03, «Верификация»",
+  "expected_result_summary": "Лог Activate → Deactivate цепочка; телепорта нет; фото не уничтожено."
+}

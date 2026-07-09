@@ -1,0 +1,3 @@
+[90] [ChunkManager] Ready — chunkSize=16, loadDistance=1
+[90] [Inventory] Seeded 2/12 items
+[102] [Inventory] Activate 'tennis_ball' → hand (slot 1 reserved)

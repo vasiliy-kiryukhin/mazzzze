@@ -1,0 +1,112 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Прогресс входа не растёт, когда активирован не-фото предмет (теннисный мяч). UpdatePhotoEnter проверяет тип PhotoItem.",
+  "id": "TC-REG-01",
+  "title": "Прогресс входа не растёт без активированной фотографии (мяч в руке)",
+  "requirement": {
+    "feature": "REQ-0017-photo",
+    "functional": [
+      "F-33"
+    ],
+    "acceptance": "Ход вперёд с активированным мячом не приводит к фото-телепорту — только PhotoItem может инициировать вход",
+    "markdown": "60-edge-regression.md",
+    "markdown_anchor": "tc-reg-01"
+  },
+  "categories": [
+    "logic"
+  ],
+  "scene": "res://test_scene.tscn",
+  "run": {
+    "headless": true,
+    "display": ":0"
+  },
+  "max_duration_frames": 360,
+  "harness_requirements": [
+    "capture_gd_print",
+    "input_simulation",
+    "frame_advance"
+  ],
+  "preconditions": [
+    "Свежий запуск игры. Мяч засеян в слот 1. Фотография не создана."
+  ],
+  "setup": [
+    {
+      "type": "wait_frames",
+      "frames": 90,
+      "reason": "инициализация мира и инвентаря"
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "выбрать ряд 1"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key2",
+      "mode": "tap",
+      "reason": "колонка 2 → активировать теннисный мяч (слот 1)"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap",
+      "reason": "закрыть инвентарь, мяч в руке"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    }
+  ],
+  "steps": [
+    {
+      "type": "action",
+      "name": "move_forward",
+      "mode": "hold",
+      "frames": 180,
+      "reason": "ход вперёд 3с с мячом в руке — UpdatePhotoEnter проверяет _activatedItem is PhotoItem и выходит сразу"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    }
+  ],
+  "assertions": [
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Inventory\\] Activate 'tennis_ball' → hand \\(slot 1 reserved\\)",
+      "reason": "мяч активирован, не фото",
+      "after_step": "setup"
+    },
+    {
+      "kind": "log_not_contains",
+      "pattern": "\\[Photo\\] Entered → teleported",
+      "reason": "телепорта нет — активирован мяч, не фото"
+    },
+    {
+      "kind": "log_not_contains",
+      "pattern": "\\[Player\\] Teleport → world=",
+      "reason": "никакого телепорта"
+    }
+  ],
+  "manual_verification_ref": "60-edge-regression.md → TC-REG-01, «Верификация»",
+  "expected_result_summary": "Мяч активирован; ход вперёд не вызывает фото-телепорт — UpdatePhotoEnter выходит по первой же проверке типа."
+}

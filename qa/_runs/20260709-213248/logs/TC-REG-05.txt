@@ -1,0 +1,17 @@
+[90] [ChunkManager] Ready — chunkSize=16, loadDistance=1
+[90] [Inventory] Seeded 2/12 items
+[126] [Inventory] Activate 'vintage_camera' → hand (slot 0 reserved)
+[149] [Camera] Viewfinder open, countdown start
+[299] [Camera] Shutter — photo created
+[299] [Camera] Photo created at (0.0, -11.0) yaw=0 → slot 0
+[307] [Inventory] Activate 'photo' → hand (slot 0 reserved)
+[317] [Inventory] Deactivate 'photo' → slot 0
+[327] [Inventory] Activate 'photo' → hand (slot 0 reserved)
+[337] [Inventory] Deactivate 'photo' → slot 0
+[347] [Inventory] Activate 'photo' → hand (slot 0 reserved)
+[357] [Inventory] Deactivate 'photo' → slot 0
+[367] [Inventory] Activate 'photo' → hand (slot 0 reserved)
+[377] [Inventory] Deactivate 'photo' → slot 0
+[387] [Inventory] Activate 'photo' → hand (slot 0 reserved)
+[525] [Player] Teleport → world=(0.0, -11.0) yaw=0 pitch=-58
+[525] [Photo] Entered → teleported

@@ -88,7 +88,7 @@ public abstract partial class Monster : CharacterBody3D
 		InitSegment();
 		_facing = -GlobalTransform.Basis.Z;
 		PickPatrolGoal();
-		GD.Print($"[Monster] Spawn '{TypeId}' cell={CellAt(GlobalPosition)} seg=[{_segMin}..{_segMax})");
+		GameLog.Print($"[Monster] Spawn '{TypeId}' cell={CellAt(GlobalPosition)} seg=[{_segMin}..{_segMax})");
 	}
 
 	// Внешний стан (F-41): попадание предметом-снарядом (напр. мячом). Триггера-мячика пока нет —
@@ -99,8 +99,12 @@ public abstract partial class Monster : CharacterBody3D
 		_stunT = StunDuration;
 		Velocity = Vector3.Zero;
 		PlayOneShot(StunAnim); // реакция на попадание (BeHit)
-		GD.Print($"[Monster] '{TypeId}' stunned {StunDuration:F1}s");
+		GameLog.Print($"[Monster] '{TypeId}' stunned {StunDuration:F1}s");
 	}
+
+	// Видит ли монстр игрока прямо сейчас (конус зрения + LoS, F-40). Используется броском мяча
+	// (REQ-0021 / F-49), чтобы на момент выпуска зафиксировать «монстр видел бросок» → стан при попадании.
+	public bool SeesPlayerNow() => Player != null && CanSee(Player.EyePosition);
 
 	public override void _PhysicsProcess(double delta)
 	{
@@ -217,7 +221,7 @@ public abstract partial class Monster : CharacterBody3D
 		_distractTarget = null;
 		_lastSeenCell = CellAt(Player.GlobalPosition);
 		RepathTo(_lastSeenCell, false);
-		GD.Print($"[Monster] '{TypeId}' → Threat (chase)");
+		GameLog.Print($"[Monster] '{TypeId}' → Threat (chase)");
 	}
 
 	private void EnterDistract(WorldItem item)
@@ -225,7 +229,7 @@ public abstract partial class Monster : CharacterBody3D
 		State = MState.Distract;
 		_distractTarget = item;
 		RepathTo(CellAt(item.GlobalPosition), true);
-		GD.Print($"[Monster] '{TypeId}' → Distract (item '{item.Item?.TypeId}')");
+		GameLog.Print($"[Monster] '{TypeId}' → Distract (item '{item.Item?.TypeId}')");
 	}
 
 	// Контактный урон (F-42/F-44): касание тела игрока снимает дозу не чаще ContactInterval.
@@ -238,7 +242,7 @@ public abstract partial class Monster : CharacterBody3D
 		_damageHud?.Flash();
 		PlayAttack(); // клип укуса/атаки
 		EmitSignal(SignalName.PlayerHit, ContactDamage); // будущая система здоровья
-		GD.Print($"[Monster] '{TypeId}' CONTACT → player -{ContactDamage:F0} hp");
+		GameLog.Print($"[Monster] '{TypeId}' CONTACT → player -{ContactDamage:F0} hp");
 	}
 
 	// --- Восприятие (F-40) -------------------------------------------------

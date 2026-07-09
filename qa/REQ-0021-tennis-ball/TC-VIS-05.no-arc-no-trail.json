@@ -1,0 +1,45 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Границы: при зарядке НЕТ прицельной дуги/линии; в полёте НЕТ трейла/следа — только сам мяч.",
+  "id": "TC-VIS-05",
+  "title": "Отсутствие прицельной дуги и трейла (границы)",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-48", "F-50"], "acceptance": "Прицельная дуга и трейл отсутствуют (за будущими улучшениями)", "markdown": "50-visual.md", "markdown_anchor": "tc-vis-05" },
+  "categories": ["visual"],
+  "scene": "res://main.tscn",
+  "run": { "headless": false, "display": ":0" },
+  "max_duration_frames": 360,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "screenshot"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "press", "reason": "зажать ЛКМ (полный заряд)" },
+    { "type": "wait_frames", "frames": 70 },
+    { "type": "screenshot", "path": "/tmp/tc-vis-05-charging.png", "reason": "при зарядке: только пульсирующий мяч, без дуги/линии" },
+    { "type": "action", "name": "use_activated", "mode": "release", "reason": "бросок" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "screenshot", "path": "/tmp/tc-vis-05-flight.png", "reason": "в полёте: только мяч, без следа/трейла" },
+    { "type": "wait_frames", "frames": 160, "reason": "дождаться land" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Throw\\] land → WorldItem at", "reason": "бросок завершён" },
+    {
+      "kind": "manual_visual_check",
+      "description": "На скриншоте заряда — никаких дуг/линий/маркеров цели (только мяч в руке). На скриншоте полёта — никакого трейла/следа за мячом.",
+      "md_ref": "50-visual.md → TC-VIS-05",
+      "screenshots": ["/tmp/tc-vis-05-charging.png", "/tmp/tc-vis-05-flight.png"]
+    }
+  ],
+  "manual_verification_ref": "50-visual.md → TC-VIS-05, «Верификация»",
+  "expected_result_summary": "Никаких дуг/трейлов — только мяч (границы соблюдены)."
+}

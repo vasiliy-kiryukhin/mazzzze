@@ -51,6 +51,15 @@ public partial class InventoryHud : Control
 	// Вход в фотографию (REQ-0017 / F-33): сколько секунд идти вперёд для переноса (сокращено ×1.5).
 	[Export] public float EnterDuration = 1.3333f;
 
+	// Бросок теннисного мячика (REQ-0021 / F-48, F-50). Значения — стартовые, калибруются.
+	// Скорости умеренные: коридор узкий (3.6 м), слишком быстрый мяч бесконечно скачет между стен.
+	[Export] public float MinThrowForce = 5.0f;    // сила при тапе / минимуме заряда, м/с
+	[Export] public float MaxThrowForce = 11.0f;   // сила при полном заряде, м/с
+	[Export] public float MaxChargeTime = 1.0f;    // время выхода на максимум; далее плато, с
+	[Export] public float ThrowUpwardBias = 3.0f;  // вертикальная добавка начальной скорости (дуга)
+	[Export] public float MoveSpeedFactorWhileCharging = 0.45f; // множитель ходьбы во время заряда
+	[Export] public float BallSize = 0.2f;         // физический размер мяча — един для руки/снаряда/мира
+
 	// Палитра в тон миникарте (тёплый пергамент).
 	private static readonly Color PanelBg      = new(0.10f, 0.08f, 0.06f, 0.85f);
 	private static readonly Color BorderColor  = new(0.18f, 0.12f, 0.07f);
@@ -81,6 +90,9 @@ public partial class InventoryHud : Control
 	private int _reservedSlot = -1;   // забронированный слот активированного предмета
 	private float _enterProgress;     // прогресс входа в фотографию, сек (REQ-0017 / F-33)
 
+	private bool _charging;           // идёт зарядка броска мяча (REQ-0021 / F-50)
+	private float _chargeT;           // накопленное время удержания ЛКМ, сек
+
 	private SubViewport _iconViewport;
 	private Player _player;
 	private ViewfinderHud _viewfinder;
@@ -101,7 +113,13 @@ public partial class InventoryHud : Control
 			"res://art/old_kodak_camera.glb", ItemUsage.ActivatedB);
 		camera.Icon = BuildIcon(camera);
 		_inv.PutAt(0, camera);
-		GD.Print($"[Inventory] Seeded {_inv.Count}/{Inventory.Capacity} items");
+
+		// Теннисный мячик (REQ-0021): многоразовый, паттерн B. Активируется в руку, зарядка/бросок ЛКМ.
+		var ball = new Item("tennis_ball", "Теннисный мячик", ItemCategory.Key,
+			"res://art/base_ball.glb", ItemUsage.ActivatedB);
+		ball.Icon = BuildIcon(ball);
+		_inv.PutAt(1, ball);
+		GameLog.Print($"[Inventory] Seeded {_inv.Count}/{Inventory.Capacity} items");
 	}
 
 	// Рендерит модель предмета в текстуру для иконки слота (glb или процедурную — BuildModel).
@@ -149,6 +167,30 @@ public partial class InventoryHud : Control
 
 	public override void _Input(InputEvent @event)
 	{
+		// Теннисный мячик (REQ-0021 / F-50): зажать ЛКМ — заряд, отпустить — бросок, RMB — отмена.
+		if (_activatedItem != null && _activatedItem.TypeId == "tennis_ball")
+		{
+			if (@event.IsActionPressed("use_activated"))
+			{
+				_charging = true;
+				_chargeT = 0.0f;
+				GetViewport().SetInputAsHandled();
+				return;
+			}
+			if (@event.IsActionReleased("use_activated") && _charging)
+			{
+				ThrowActivated();
+				GetViewport().SetInputAsHandled();
+				return;
+			}
+			if (@event.IsActionPressed("throw_cancel") && _charging)
+			{
+				CancelCharge();
+				GetViewport().SetInputAsHandled();
+				return;
+			}
+		}
+
 		// ЛКМ — использовать активированный фотоаппарат: открыть видоискатель (REQ-0013 / F-21).
 		// Повторная ЛКМ во время видоискателя игнорируется. Фотография на ЛКМ не реагирует.
 		if (@event.IsActionPressed("use_activated"))
@@ -302,12 +344,12 @@ public partial class InventoryHud : Control
 		float lz = _player.GlobalPosition.Z + dir.Z * distance;
 		Vector3 land = new Vector3(lx, FloorYAt(lx, lz, _player.GlobalPosition.Y), lz);
 
-		float targetHeight = WorldItemSizeFraction * PlayerHeight;
+		float targetHeight = WorldHeightFor(item);
 
 		var projectile = new DropProjectile();
 		_player.GetParent().AddChild(projectile);
 		projectile.Setup(start, land, DropArcHeight, DropFlightDuration, item, targetHeight);
-		GD.Print($"[Inventory] Drop '{item.TypeId}' → world at ({land.X:F1}, {land.Z:F1})");
+		GameLog.Print($"[Inventory] Drop '{item.TypeId}' → world at ({land.X:F1}, {land.Z:F1})");
 	}
 
 	// Активация (InInventory → Activated, F-18/B): взять предмет в руку. Слот бронируется
@@ -326,7 +368,9 @@ public partial class InventoryHud : Control
 		_player?.PlayPickupGesture(); // анимация взятия предмета в руку (F-15/анимация)
 		if (item is PhotoItem photo)
 			_photoEnter?.BeginPreview(_player, photo); // живое окно вида «сквозь фото» (REQ-0017)
-		GD.Print($"[Inventory] Activate '{item.TypeId}' → hand (slot {slot} reserved)");
+		if (item.TypeId == "tennis_ball") // мяч виден в руке как обратная связь при зарядке (REQ-0021)
+			_player?.ShowHandItem(item.BuildModel(), BallSize);
+		GameLog.Print($"[Inventory] Activate '{item.TypeId}' → hand (slot {slot} reserved)");
 		QueueRedraw();
 	}
 
@@ -337,7 +381,7 @@ public partial class InventoryHud : Control
 			return;
 		if (_viewfinder != null && _viewfinder.Active)
 			_viewfinder.Cancel();
-		GD.Print($"[Inventory] Deactivate '{_activatedItem?.TypeId}' → slot {_reservedSlot}");
+		GameLog.Print($"[Inventory] Deactivate '{_activatedItem?.TypeId}' → slot {_reservedSlot}");
 		ClearActivated();
 	}
 
@@ -353,6 +397,53 @@ public partial class InventoryHud : Control
 		ClearActivated();
 		if (item != null)
 			SpawnDrop(item);
+	}
+
+	// Бросок активированного мяча (Activated → InWorld, REQ-0021 / F-47, F-48): слот освобождается
+	// (как drop activated), но мяч НЕ расходуется — он летит физическим снарядом и вернётся авто-подбором.
+	private void ThrowActivated()
+	{
+		if (_reservedSlot < 0 || _activatedItem == null || _activatedItem.TypeId != "tennis_ball")
+		{
+			CancelCharge();
+			return;
+		}
+		float force = Mathf.Lerp(MinThrowForce, MaxThrowForce,
+			Mathf.Clamp(_chargeT / Mathf.Max(MaxChargeTime, 0.001f), 0.0f, 1.0f));
+		int slot = _reservedSlot;
+		Item item = _inv.RemoveAt(slot); // слот освобождается (бронь снимается), но item жив — летит в мир
+		ClearActivated();
+		SpawnThrow(item, force);
+	}
+
+	// Высота модели предмета в мире. Мяч имеет собственный единый размер (`BallSize`) во всех
+	// состояниях (рука/снаряд/лежит), иначе он «прыгал» бы в размере при приземлении (REQ-0021).
+	private float WorldHeightFor(Item item) =>
+		item != null && item.TypeId == "tennis_ball" ? BallSize : WorldItemSizeFraction * PlayerHeight;
+
+	// Создаёт физический снаряд-мяч: направление — yaw камеры; «видел бросок» фиксируется по реестру
+	// монстров в момент выпуска (REQ-0021 / F-49).
+	private void SpawnThrow(Item item, float force)
+	{
+		if (_player == null || item == null)
+			return;
+		Vector3 dir = _player.CameraYawForward;
+		dir.Y = 0.0f;
+		if (dir.LengthSquared() < 0.0001f) dir = Vector3.Forward;
+		dir = dir.Normalized();
+
+		var aware = new HashSet<Monster>();
+		foreach (Monster m in Monster.All)
+			if (IsInstanceValid(m) && m.SeesPlayerNow()) aware.Add(m);
+
+		// Выпуск из руки (центр мяча в кисти) чуть вперёд по направлению броска, чтобы не задеть игрока.
+		Vector3 spawn = _player.HandThrowOrigin + dir * 0.35f;
+		float targetHeight = WorldHeightFor(item);
+
+		var proj = new ThrowProjectile();
+		_player.GetParent().AddChild(proj);
+		proj.Setup(spawn, dir, force, ThrowUpwardBias, item, targetHeight, aware);
+		GameLog.Print($"[Inventory] Throw '{item.TypeId}' force={force:F1} (aware monsters={aware.Count})");
 	}
 
 	// Уничтожение активированного с заменой (F-19a): камера → фотография в тот же слот,
@@ -377,12 +468,25 @@ public partial class InventoryHud : Control
 		_activatedItem = null;
 		_reservedSlot = -1;
 		_enterProgress = 0.0f;
+		CancelCharge(); // сброс зарядки броска и восстановление скорости/модели в руке (REQ-0021)
 		if (_photoEnter != null)
 		{
 			_photoEnter.Progress = 0.0f;
 			_photoEnter.EndPreview();
 		}
 		QueueRedraw();
+	}
+
+	// Сброс заряда броска без выпуска мяча (RMB или деактивация): скорость и модель в руке восстановлены.
+	private void CancelCharge()
+	{
+		_charging = false;
+		_chargeT = 0.0f;
+		if (_player != null)
+			_player.ExternalSpeedFactor = 1.0f;
+		_player?.HideHandItem();
+		if (_activatedItem != null && _activatedItem.TypeId == "tennis_ball")
+			_player?.ShowHandItem(_activatedItem.BuildModel(), BallSize); // мяч остаётся в руке
 	}
 
 	// Срабатывание фотоаппарата (конец таймера видоискателя, F-22): создаём фотографию с
@@ -398,7 +502,7 @@ public partial class InventoryHud : Control
 		_player.PlayPickupGesture(); // жест подбора: игроку очевидно, что в инвентаре новый предмет
 		_flashSlot = slot;           // вспышка на ячейке, куда легла фотография (F-30)
 		_flashT = 1.0f;
-		GD.Print($"[Camera] Photo created at ({pos.X:F1}, {pos.Y:F1}) yaw={photo.CapturedYawDeg:F0} → slot {slot}");
+		GameLog.Print($"[Camera] Photo created at ({pos.X:F1}, {pos.Y:F1}) yaw={photo.CapturedYawDeg:F0} → slot {slot}");
 	}
 
 	// Подбор (REQ-0016 / F-29): автоматически, когда игрок близко к взведённому предмету
@@ -407,8 +511,20 @@ public partial class InventoryHud : Control
 	{
 		if (_player == null)
 			return;
+		UpdateThrowCharge((float)delta);
 		UpdatePhotoEnter((float)delta);
 		TryPickup();
+	}
+
+	// Зарядка броска (REQ-0021 / F-50): пока зажата ЛКМ на активированном мяче — копим время (плато
+	// на MaxChargeTime), занижаем скорость игрока и пульсируем модель в руке как обратную связь.
+	private void UpdateThrowCharge(float dt)
+	{
+		if (!_charging)
+			return;
+		_chargeT = Mathf.Min(_chargeT + dt, MaxChargeTime);
+		_player.ExternalSpeedFactor = MoveSpeedFactorWhileCharging;
+		_player.SetHandItemCharge(Mathf.Clamp(_chargeT / Mathf.Max(MaxChargeTime, 0.001f), 0.0f, 1.0f));
 	}
 
 	// Вход в фотографию (REQ-0017 / F-33): прогресс растёт, пока активирована фотография,
@@ -434,7 +550,7 @@ public partial class InventoryHud : Control
 			_player.TeleportTo(photo.CapturedWorldPos, photo.CapturedYawDeg, photo.CapturedPitchDeg);
 			_photoEnter?.Flash();
 			ConsumeActivated(null); // одноразовая: слот освобождается (F-33)
-			GD.Print("[Photo] Entered → teleported");
+			GameLog.Print("[Photo] Entered → teleported");
 		}
 	}
 
@@ -508,7 +624,7 @@ public partial class InventoryHud : Control
 		var projectile = new PickupProjectile();
 		_player.GetParent().AddChild(projectile);
 		projectile.Setup(start, _player, this, slot, PickupArcHeight, PickupFlightDuration);
-		GD.Print($"[Inventory] Pickup '{item.TypeId}' → slot {slot}");
+		GameLog.Print($"[Inventory] Pickup '{item.TypeId}' → slot {slot}");
 		QueueRedraw();
 	}
 

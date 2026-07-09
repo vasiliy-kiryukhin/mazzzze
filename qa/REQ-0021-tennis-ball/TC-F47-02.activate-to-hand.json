@@ -1,0 +1,49 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Активация мяча «в руку» (InInventory → Activated, паттерн B), слот бронируется, узел HandItem появляется.",
+  "id": "TC-F47-02",
+  "title": "Активация «в руку» (InInventory → Activated, паттерн B)",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-47"], "acceptance": "Паттерн B — активация «в руку», слот бронируется (F-19a)", "markdown": "10-lifecycle-reusability.md", "markdown_anchor": "tc-f47-02" },
+  "categories": ["logic", "model"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 240,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance"],
+  "preconditions": ["Мяч засеян в слот 1; инвентарь закрыт"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap", "reason": "открыть инвентарь" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap", "reason": "выбрать ряд 1" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "колонка 2 → активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap", "reason": "закрыть инвентарь" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "screenshot", "path": "/tmp/tc-f47-02-hand.png", "reason": "мяч в кисти игрока" },
+    { "type": "mouse_motion", "dx": 120, "dy": 0, "reason": "повернуть камеру — проверить, что мяч следует за кистью" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "screenshot", "path": "/tmp/tc-f47-02-hand-turned.png", "reason": "мяч остался в кисти после поворота" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Inventory\\] Activate 'tennis_ball' → hand \\(slot 1 reserved\\)", "after_step": "setup", "reason": "активация выполнена, слот забронирован" },
+    {
+      "kind": "node",
+      "path": "/root/Main/Player/ModelPivot/Character/Rig/GeneralSkeleton/HandAnchor/HandItem",
+      "exists": true,
+      "at": "after_setup",
+      "reason": "Ball виден в кисти (BoneAttachment3D → RightHand)"
+    },
+    {
+      "kind": "manual_visual_check",
+      "description": "После поворота камеры мяч остаётся у правой кисти (не «висит» рядом, не отстаёт).",
+      "md_ref": "10-lifecycle-reusability.md → TC-F47-02",
+      "screenshot": "/tmp/tc-f47-02-hand-turned.png"
+    }
+  ],
+  "manual_verification_ref": "10-lifecycle-reusability.md → TC-F47-02, «Верификация»",
+  "expected_result_summary": "Лог Activate … slot 1 reserved; узел HandItem существует; мяч в кисти при любом yaw."
+}

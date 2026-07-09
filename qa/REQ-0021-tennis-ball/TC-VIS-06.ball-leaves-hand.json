@@ -1,0 +1,48 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Мяч исчезает из кисти в момент броска (Activated → InWorld). Проверка: узел HandItem отсутствует после броска.",
+  "id": "TC-VIS-06",
+  "title": "Мяч исчезает из руки в момент броска",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-47"], "acceptance": "После броска мяч исчезает из руки", "markdown": "50-visual.md", "markdown_anchor": "tc-vis-06" },
+  "categories": ["visual", "logic"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 300,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч — HandItem появляется" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 40, "reason": "бросок" },
+    { "type": "wait_frames", "frames": 30 }
+  ],
+  "assertions": [
+    {
+      "kind": "node",
+      "path": "/root/Main/Player/ModelPivot/Character/Rig/GeneralSkeleton/HandAnchor/HandItem",
+      "exists": true,
+      "at": "after_setup",
+      "reason": "после активации мяч в кисти есть"
+    },
+    {
+      "kind": "node",
+      "path": "/root/Main/Player/ModelPivot/Character/Rig/GeneralSkeleton/HandAnchor/HandItem",
+      "exists": false,
+      "at": "end",
+      "reason": "после броска мяч исчез из кисти"
+    },
+    { "kind": "log_contains", "pattern": "\\[Inventory\\] Throw 'tennis_ball' force=", "reason": "бросок выполнен" }
+  ],
+  "manual_verification_ref": "50-visual.md → TC-VIS-06, «Верификация»",
+  "expected_result_summary": "HandItem: есть после активации → нет после броска."
+}

@@ -1,0 +1,56 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Заметаемая коллизия (MoveAndCollide): при броске на максимум вдоль пола/в узкий коридор мяч не проваливается сквозь тонкий пол/стены. Регрессия против RigidBody3D-версии.",
+  "id": "TC-F48-06",
+  "title": "Заметаемая коллизия — мяч не проваливается сквозь тонкий пол/стены",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-48"], "acceptance": "Снаряд-CharacterBody3D на MoveAndCollide не туннелирует", "markdown": "30-throw-physics.md", "markdown_anchor": "tc-f48-06" },
+  "categories": ["logic", "visual"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 480,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance"],
+  "preconditions": ["Мяч активирован в руку; камера в нижнем pitch (бросок почти вдоль пола)"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "aim_camera", "pitch_deg": -80.0, "reason": "бросок почти вдоль пола" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 120, "reason": "максимальная сила" },
+    { "type": "wait_frames", "frames": 280, "reason": "наблюдать всю траекторию до остановки" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Throw\\] land → WorldItem at", "reason": "мяч остановился в пределах геометрии" },
+    {
+      "kind": "node_by_type",
+      "parent": "/root/Main",
+      "type": "WorldItem",
+      "count_min": 1,
+      "at": "end",
+      "reason": "мяч присутствует в сцене как предмет"
+    },
+    {
+      "kind": "node_by_type",
+      "parent": "/root/Main",
+      "type": "ThrowProjectile",
+      "count_max": 0,
+      "at": "end"
+    },
+    {
+      "kind": "manual_visual_check",
+      "description": "Мяч всё время остаётся в пределах коридора (не проваливается под пол, не вылетает сквозь стены); land-координаты в проходимой клетке (сверить с миникартой/MazeData.IsFloor).",
+      "md_ref": "30-throw-physics.md → TC-F48-06"
+    }
+  ],
+  "manual_verification_ref": "30-throw-physics.md → TC-F48-06, «Верификация»",
+  "expected_result_summary": "Мяч не туннелирует: остаётся в коридоре и заканчивает как WorldItem."
+}

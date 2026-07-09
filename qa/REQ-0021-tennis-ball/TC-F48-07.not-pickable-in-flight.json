@@ -1,0 +1,44 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "В полёте мяч НЕ подбирается (развилка 6A). Сразу после выпуска бежим вслед — до [Throw] land подбора быть не должно.",
+  "id": "TC-F48-07",
+  "title": "В полёте мяч НЕ подбирается игроком",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-48"], "acceptance": "До остановки (land) мяч не pickable", "markdown": "30-throw-physics.md", "markdown_anchor": "tc-f48-07" },
+  "categories": ["logic"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 480,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 30, "reason": "бросок" },
+    { "type": "action", "name": "move_forward", "mode": "press", "reason": "бежать вслед за мячом во время его полёта" },
+    { "type": "wait_frames", "frames": 30, "reason": "попытка «влететь» в мяч до land" },
+    { "type": "action", "name": "move_forward", "mode": "release" },
+    { "type": "wait_frames", "frames": 200, "reason": "дождаться land" }
+  ],
+  "assertions": [
+    {
+      "kind": "log_not_contains",
+      "pattern": "\\[Inventory\\] Pickup 'tennis_ball'",
+      "after_step": 1,
+      "within_frames": 40,
+      "reason": "во время полёта (до land) подбора нет"
+    },
+    { "kind": "log_contains", "pattern": "\\[Throw\\] land → WorldItem at", "reason": "снаряд стал предметом только после остановки" }
+  ],
+  "manual_verification_ref": "30-throw-physics.md → TC-F48-07, «Верификация»",
+  "expected_result_summary": "Подбор невозможен до land; лишь после остановки мяч становится pickable."
+}

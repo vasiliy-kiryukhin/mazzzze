@@ -1,0 +1,43 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Плато силы: удержание дольше MaxChargeTime (2 с) → сила = MaxThrowForce≈11.0 (не выше).",
+  "id": "TC-F50-05",
+  "title": "Плато силы — удержание дольше MaxChargeTime не добавляет силу",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-50"], "acceptance": "Сила кэпится на MaxThrowForce при удержании > MaxChargeTime", "markdown": "20-input-charge-cancel.md", "markdown_anchor": "tc-f50-05" },
+  "categories": ["input", "logic"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 420,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 120, "reason": "удержание 2 с (>> MaxChargeTime=1.0 с) — плато" },
+    { "type": "wait_frames", "frames": 200, "reason": "дождаться land" }
+  ],
+  "assertions": [
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Throw\\] launch force=([0-9.]+)",
+      "regex": true,
+      "capture_group": 1,
+      "min": 10.9,
+      "max": 11.0,
+      "reason": "сила кэпится на MaxThrowForce=11.0 даже при длинном удержании"
+    },
+    { "kind": "log_contains", "pattern": "\\[Throw\\] land → WorldItem at", "reason": "бросок завершён" }
+  ],
+  "manual_verification_ref": "20-input-charge-cancel.md → TC-F50-05, «Верификация»",
+  "expected_result_summary": "Сила = 11.0 (та же, что при 1.1 с удержания); кэп работает."
+}

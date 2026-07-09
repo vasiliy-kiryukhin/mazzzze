@@ -1,0 +1,33 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Проверка засева мяча в инвентарь на старте.",
+  "id": "TC-F47-01",
+  "title": "Мяч засевается в инвентарь на старте (тип, паттерн B)",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-47"], "acceptance": "Мяч наследует базовый предмет, паттерн B; засев в слот", "markdown": "10-lifecycle-reusability.md", "markdown_anchor": "tc-f47-01" },
+  "categories": ["logic"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 180,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance"],
+  "preconditions": ["Свежий запуск main.tscn"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира и инвентаря" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap", "reason": "открыть инвентарь" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "screenshot", "path": "/tmp/tc-f47-01-inventory.png", "reason": "зафиксировать иконки слотов" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Inventory\\] Seeded 2/12 items", "reason": "мяч и фотоаппарат засеяны (2 предмета)" },
+    {
+      "kind": "manual_visual_check",
+      "description": "В слоте ряд 1 / колонка 2 лежит иконка мячика (рендер base_ball.glb); в слоте ряд 1 / колонка 1 — фотоаппарат; остальные 10 слотов пусты.",
+      "md_ref": "10-lifecycle-reusability.md → TC-F47-01",
+      "screenshot": "/tmp/tc-f47-01-inventory.png"
+    }
+  ],
+  "manual_verification_ref": "10-lifecycle-reusability.md → TC-F47-01, «Верификация»",
+  "expected_result_summary": "На старте в логе Seeded 2/12; в инвентаре иконка мячика в слоте (1,2)."
+}

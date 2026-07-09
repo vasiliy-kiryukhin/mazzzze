@@ -15,7 +15,7 @@ public partial class ChunkManager : Node3D
 	{
 		chunkScene = ResourceLoader.Load<PackedScene>("res://chunk.tscn");
 		meshLibrary = ResourceLoader.Load<MeshLibrary>("res://MazeTiles.tres");
-		GD.Print($"[ChunkManager] Ready — chunkSize={ChunkSize}, loadDistance={LoadDistance}");
+		GameLog.Print($"[ChunkManager] Ready — chunkSize={ChunkSize}, loadDistance={LoadDistance}");
 	}
 
 	public void UpdateChunks(Vector2 playerWorldPos)
@@ -55,7 +55,7 @@ public partial class ChunkManager : Node3D
 			if (Mathf.Abs(chunkPos.X - centerChunk.X) > LoadDistance ||
 				Mathf.Abs(chunkPos.Y - centerChunk.Y) > LoadDistance)
 			{
-				GD.Print($"[ChunkManager] UNLOAD  chunk ({chunkPos.X},{chunkPos.Y})  " +
+				GameLog.Print($"[ChunkManager] UNLOAD  chunk ({chunkPos.X},{chunkPos.Y})  " +
 					$"world=({kvp.Value.Position.X:F0},{kvp.Value.Position.Z:F0})");
 				kvp.Value.QueueFree();
 				toRemove.Add(kvp.Key);
@@ -84,7 +84,7 @@ public partial class ChunkManager : Node3D
 		AddChild(chunk);
 		chunk.Setup(chunkPos, chunkData);
 
-		GD.Print($"[ChunkManager] LOAD   chunk ({chunkPos.X},{chunkPos.Y})  " +
+		GameLog.Print($"[ChunkManager] LOAD   chunk ({chunkPos.X},{chunkPos.Y})  " +
 			$"size={ChunkSize * cs:F0}x{ChunkSize * cs:F0}  " +
 			$"world=({chunk.Position.X:F0},{chunk.Position.Z:F0})  " +
 			$"totalActive={activeChunks.Count + 1}");

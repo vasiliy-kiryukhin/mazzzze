@@ -12,6 +12,7 @@ public partial class MazeData : Node
 {
 	public static MazeData Instance { get; private set; }
 	public override void _EnterTree() { Instance = this; }
+	public override void _ExitTree() { if (Instance == this) Instance = null; }
 
 	// Region footprint per side, in world (Block) cells. This is exactly the
 	// size the façade returns (see RegionSize); the corridor count within it is
@@ -70,7 +71,7 @@ public partial class MazeData : Node
 		_exit = new Vector2I(exit.X, exit.Y);
 		PlayerStartCell = _entrance;
 
-		GD.Print($"[MazeData] region {RegionSize.X}x{RegionSize.Y} block cells, " +
+		GameLog.Print($"[MazeData] region {RegionSize.X}x{RegionSize.Y} block cells, " +
 			$"seed={seed}, entrance={_entrance}, exit={_exit}, " +
 			$"offset=({WorldOffsetX:F0}, {WorldOffsetZ:F0})");
 	}

@@ -1,0 +1,51 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Мяч в кисти следует за костью RightHand (BoneAttachment3D) при любом yaw/pitch. Регресс: фиксированное крепление к ModelPivot «висело» рядом.",
+  "id": "TC-VIS-02",
+  "title": "Мяч в кисти следует за костью RightHand при любом ракурсе камеры",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-47"], "acceptance": "Мяч в руке при любом ракурсе (BoneAttachment3D RightHand)", "markdown": "50-visual.md", "markdown_anchor": "tc-vis-02" },
+  "categories": ["visual", "model"],
+  "scene": "res://main.tscn",
+  "run": { "headless": false, "display": ":0" },
+  "max_duration_frames": 360,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "screenshot"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "screenshot", "path": "/tmp/tc-vis-02-yaw0.png", "reason": "yaw 0" },
+    { "type": "mouse_motion", "dx": 200, "dy": 0, "reason": "повернуть на ~90°" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "screenshot", "path": "/tmp/tc-vis-02-yaw90.png" },
+    { "type": "mouse_motion", "dx": 200, "dy": 0, "reason": "ещё ~90°" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "screenshot", "path": "/tmp/tc-vis-02-yaw180.png", "reason": "мяч остался в кисти после поворота" }
+  ],
+  "assertions": [
+    {
+      "kind": "node",
+      "path": "/root/Main/Player/ModelPivot/Character/Rig/GeneralSkeleton/HandAnchor/HandItem",
+      "exists": true,
+      "at": "end",
+      "reason": "узел мяча в кисти существует всё время"
+    },
+    {
+      "kind": "manual_visual_check",
+      "description": "На всех трёх скриншотах мяч привязан к правой кисти; не «висит» рядом и не отстаёт при повороте камеры.",
+      "md_ref": "50-visual.md → TC-VIS-02",
+      "screenshots": ["/tmp/tc-vis-02-yaw0.png", "/tmp/tc-vis-02-yaw90.png", "/tmp/tc-vis-02-yaw180.png"]
+    }
+  ],
+  "manual_verification_ref": "50-visual.md → TC-VIS-02, «Верификация»",
+  "expected_result_summary": "Мяч остаётся в кисти при любом yaw (крепление к кости)."
+}

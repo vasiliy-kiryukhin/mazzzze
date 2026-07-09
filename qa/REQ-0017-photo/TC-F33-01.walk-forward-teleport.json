@@ -1,0 +1,190 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Накопление прогресса входа и телепорт при непрерывном движении вперёд > EnterDuration.",
+  "id": "TC-F33-01",
+  "title": "Вход движением вперёд — телепорт после EnterDuration",
+  "requirement": {
+    "feature": "REQ-0017-photo",
+    "functional": [
+      "F-33"
+    ],
+    "acceptance": "Непрерывное движение вперёд ≥ EnterDuration в открытом коридоре приводит к телепорту",
+    "markdown": "30-teleport-entry.md",
+    "markdown_anchor": "tc-f33-01"
+  },
+  "categories": [
+    "logic"
+  ],
+  "scene": "res://test_scene.tscn",
+  "run": {
+    "headless": true,
+    "display": ":0"
+  },
+  "random_seed_note": "Зависит от того, что стартовый коридор длинный и не упирается в стену в пределах EnterDuration (~1.33 с хода).",
+  "max_duration_frames": 586,
+  "record_video": true,
+  "video_fps": 15,
+  "harness_requirements": [
+    "capture_gd_print",
+    "input_simulation",
+    "frame_advance"
+  ],
+  "preconditions": [
+    "Фотография создана в слоте 0 (setup). Игрок смотрит в открытый коридор."
+  ],
+  "setup": [
+    {
+      "type": "wait_frames",
+      "frames": 90,
+      "reason": "инициализация мира и инвентаря"
+    },
+    {
+      "type": "mouse_motion",
+      "dx": 0,
+      "dy": -20,
+      "reason": "слегка опустить камеру — смотреть вдоль пола"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "action",
+      "name": "move_forward",
+      "mode": "hold",
+      "frames": 6,
+      "reason": "короткий шаг вперёд — сместить игрока ~1u для гарантии FocusMinDistance > 1.8u"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "фотоаппарат (слот 0)"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "mouse_button",
+      "button": "left",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 150,
+      "reason": "отсчёт ~2.0с, фото создано в слоте 0"
+    }
+  ],
+  "steps": [
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "активировать фотографию"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "move_forward",
+      "mode": "hold",
+      "frames": 150,
+      "reason": "EnterDuration=1.3333с=80 кадров + разгон ~30 кадров + запас 40 кадров; ход вперёд"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 20,
+      "reason": "пост-телепорт: дождаться завершения мерцания FlashDuration=0.6с"
+    }
+  ],
+  "assertions": [
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Inventory\\] Activate 'photo' → hand \\(slot 0 reserved\\)",
+      "reason": "фото активировано",
+      "after_step": 4
+    },
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Photo\\] Entered → teleported",
+      "reason": "вход завершён — телепорт",
+      "after_step": 6
+    },
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Player\\] Teleport → world=\\(.+\\, .+\\) yaw=\\d+ pitch=-?\\d+",
+      "regex": true,
+      "reason": "игрок телепортирован в запечатлённую точку",
+      "after_step": 6
+    },
+    {
+      "kind": "log_not_contains",
+      "pattern": "\\[Camera\\] Focus blocked — too close",
+      "reason": "не было ошибки фокуса при съёмке"
+    }
+  ],
+  "manual_verification_ref": "30-teleport-entry.md → TC-F33-01, «Верификация»",
+  "expected_result_summary": "Лог: Activate → Entered → teleported → Teleport; игрок перенесён в запечатлённую точку."
+}

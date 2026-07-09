@@ -47,7 +47,7 @@ public partial class Item : RefCounted
 	// в их требованиях (например, REQ-0013 для фотоаппарата); здесь — заглушка.
 	public bool Use()
 	{
-		GD.Print($"[Inventory] Use item '{TypeId}' ({DisplayName})");
+		GameLog.Print($"[Inventory] Use item '{TypeId}' ({DisplayName})");
 		return Category == ItemCategory.Consumable;
 	}
 

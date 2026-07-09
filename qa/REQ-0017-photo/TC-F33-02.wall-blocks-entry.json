@@ -1,0 +1,185 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Прогресс входа не растёт, когда игрок упирается в стену — условие реального продвижения.",
+  "id": "TC-F33-02",
+  "title": "Прогресс входа не растёт у стены (заблокирован вход)",
+  "requirement": {
+    "feature": "REQ-0017-photo",
+    "functional": [
+      "F-33"
+    ],
+    "acceptance": "При движении в стену прогресс не накапливается, телепорт не срабатывает",
+    "markdown": "30-teleport-entry.md",
+    "markdown_anchor": "tc-f33-02"
+  },
+  "categories": [
+    "logic"
+  ],
+  "scene": "res://main.tscn",
+  "run": {
+    "headless": true,
+    "display": ":0"
+  },
+  "random_seed_note": "Тест требует maze-сид, где камера при активации смотрит в открытый коридор (FocusMinDistance > 1.8u), но позже при yaw=180 упирается в стену. Эти условия противоположны и зависят от сида — flaky по определению.",
+  "max_duration_frames": 616,
+  "harness_requirements": [
+    "capture_gd_print",
+    "input_simulation",
+    "frame_advance"
+  ],
+  "preconditions": [
+    "Фотография создана в слоте 0 (setup). Игрок повёрнут на 180° к стене."
+  ],
+  "setup": [
+    {
+      "type": "wait_frames",
+      "frames": 90,
+      "reason": "инициализация мира и инвентаря"
+    },
+    {
+      "type": "mouse_motion",
+      "dx": 0,
+      "dy": -20,
+      "reason": "слегка опустить камеру — смотреть вдоль пола"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "action",
+      "name": "move_forward",
+      "mode": "hold",
+      "frames": 6,
+      "reason": "короткий шаг вперёд — сместить игрока ~1u для гарантии FocusMinDistance > 1.8u"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "фотоаппарат (слот 0)"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "mouse_button",
+      "button": "left",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 150,
+      "reason": "отсчёт, фото создано"
+    }
+  ],
+  "steps": [
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 5
+    },
+    {
+      "type": "key",
+      "physical_keycode": "Key1",
+      "mode": "tap",
+      "reason": "активировать фотографию"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "inventory_toggle",
+      "mode": "tap"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "aim_camera",
+      "yaw_deg": 180.0,
+      "reason": "разворот на 180° — смотреть в стену позади стартовой клетки"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    },
+    {
+      "type": "action",
+      "name": "move_forward",
+      "mode": "hold",
+      "frames": 240,
+      "reason": "ход вперёд в стену — прогресс не должен накапливаться"
+    },
+    {
+      "type": "wait_frames",
+      "frames": 10
+    }
+  ],
+  "assertions": [
+    {
+      "kind": "log_contains",
+      "pattern": "\\[Inventory\\] Activate 'photo' → hand \\(slot 0 reserved\\)",
+      "reason": "фото активировано",
+      "after_step": 4
+    },
+    {
+      "kind": "log_not_contains",
+      "pattern": "\\[Photo\\] Entered → teleported",
+      "reason": "телепорта нет — игрок упёрся в стену"
+    }
+  ],
+  "manual_verification_ref": "30-teleport-entry.md → TC-F33-02, «Верификация»",
+  "expected_result_summary": "Фото активировано, но при ходе в стену прогресс не растёт — телепорта нет.",
+  "flaky": true,
+  "retry": 10
+}

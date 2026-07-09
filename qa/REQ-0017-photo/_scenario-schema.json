@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa/REQ-0017-photo/_scenario-schema.json",
+  "title": "GdUnit4 data-driven scenario (REQ-0017-photo)",
+  "description": "Description of one test case. Loaded by GdUnit4 C# test-runner (ISceneRunner). One file per TC. format_version 1.0.",
+  "type": "object",
+  "required": ["format_version", "id", "title", "requirement", "scene", "steps", "assertions"],
+  "additionalProperties": true,
+  "properties": {
+    "$schema": { "type": "string" },
+    "format_version": { "const": "1.0" },
+    "_comment": { "type": "string" },
+    "id": { "type": "string", "pattern": "^TC-(F31|F32|F33|F34|VIS|REG)-[0-9]{2}$" },
+    "title": { "type": "string" },
+    "requirement": {
+      "type": "object",
+      "properties": {
+        "feature": { "const": "REQ-0017-photo" },
+        "functional": { "type": "array", "items": { "type": "string" } },
+        "acceptance": { "type": "string" },
+        "markdown": { "type": "string" },
+        "markdown_anchor": { "type": "string" }
+      }
+    },
+    "categories": { "type": "array", "items": { "enum": ["logic", "input", "visual", "model", "animation"] } },
+    "scene": { "type": "string", "default": "res://test_scene.tscn", "description": "Стартовая сцена. По умолчанию test_scene.tscn (комната 50×50). main.tscn — основная игра с лабиринтом." },
+    "run": {
+      "type": "object",
+      "properties": { "headless": { "type": "boolean" }, "display": { "type": "string" } }
+    },
+    "random_seed_note": { "type": "string" },
+    "flaky": { "type": "boolean", "default": false },
+    "retry": { "type": "integer", "default": 1 },
+    "on_no_setup": { "enum": ["skip", "fail", "block"], "default": "skip" },
+    "max_duration_frames": { "type": "integer" },
+    "record_video": { "type": "boolean", "default": false },
+    "video_fps": { "type": "integer", "default": 60 },
+    "harness_requirements": { "type": "array", "items": { "type": "string" } },
+    "setup_strategy": { "type": "string" },
+    "preconditions": { "type": "array", "items": { "type": "string" } },
+    "setup": { "type": "array", "items": { "$ref": "#/$defs/step" } },
+    "steps": { "type": "array", "items": { "$ref": "#/$defs/step" } },
+    "assertions": { "type": "array", "items": { "$ref": "#/$defs/assertion" } },
+    "manual_visual_check": { "type": "array", "items": { "type": "object" } },
+    "manual_verification_ref": { "type": "string" },
+    "expected_result_summary": { "type": "string" }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["wait_frames", "wait_msec", "action", "key", "mouse_motion", "mouse_button",
+                   "aim_camera", "find_monster", "move_player", "screenshot"]
+        },
+        "reason": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "wait_frames" } } },
+          "then": { "required": ["frames"], "properties": { "frames": { "type": "integer" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "wait_msec" } } },
+          "then": { "required": ["ms"], "properties": { "ms": { "type": "integer" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "action" } } },
+          "then": {
+            "required": ["name", "mode"],
+            "properties": {
+              "name": { "type": "string" },
+              "mode": { "enum": ["press", "release", "tap", "hold"] },
+              "frames": { "type": "integer" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "key" } } },
+          "then": {
+            "required": ["physical_keycode", "mode"],
+            "properties": {
+              "physical_keycode": { "type": "string" },
+              "mode": { "enum": ["press", "release", "tap"] },
+              "modifiers": { "type": "array", "items": { "enum": ["shift", "ctrl", "alt"] } }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "mouse_motion" } } },
+          "then": { "required": ["dx", "dy"], "properties": { "dx": { "type": "integer" }, "dy": { "type": "integer" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "mouse_button" } } },
+          "then": {
+            "required": ["button", "mode"],
+            "properties": {
+              "button": { "enum": ["left", "right", "middle"] },
+              "mode": { "enum": ["press", "release", "tap", "hold"] },
+              "frames": { "type": "integer" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "aim_camera" } } },
+          "then": {
+            "properties": {
+              "yaw_deg": { "type": "number" },
+              "pitch_deg": { "type": "number" },
+              "at_monster": { "type": "string" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "find_monster" } } },
+          "then": {
+            "required": ["store_as"],
+            "properties": {
+              "store_as": { "type": "string" },
+              "filter": {
+                "type": "object",
+                "properties": {
+                  "line_of_sight_to_player": { "type": "boolean" },
+                  "player_can_see": { "type": "boolean" },
+                  "within_cells": { "type": "array", "items": { "type": "integer" } },
+                  "state": { "enum": ["Cycle", "Threat", "Stun", "Distract"] }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "move_player" } } },
+          "then": {
+            "properties": {
+              "toward": { "type": "string" },
+              "to_cell": { "type": "array", "items": { "type": "integer" } },
+              "distance": { "type": "number" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "screenshot" } } },
+          "then": { "required": ["path"], "properties": { "path": { "type": "string" } } }
+        }
+      ]
+    },
+    "assertion": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "enum": ["log_contains", "log_not_contains", "log_order", "node", "node_by_type", "node_property", "compare", "screenshot_ref", "manual_visual_check"]
+        },
+        "pattern": { "type": "string" },
+        "patterns": { "type": "array", "items": { "type": "string" } },
+        "regex": { "type": "boolean" },
+        "capture_group": { "type": "integer" },
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "after_step": {},
+        "within_frames": { "type": "integer" },
+        "path": { "type": "string" },
+        "parent": { "type": "string" },
+        "type": { "type": "string" },
+        "exists": { "type": "boolean" },
+        "count_min": { "type": "integer" },
+        "count_max": { "type": "integer" },
+        "property": { "type": "string" },
+        "equals": {},
+        "capture_as": { "type": "string" },
+        "at": {},
+        "a": { "type": "string" },
+        "b": {},
+        "op": { "enum": ["lt", "gt", "eq", "approx"] },
+        "tolerance": { "type": "number" },
+        "description": { "type": "string" },
+        "md_ref": { "type": "string" },
+        "reason": { "type": "string" }
+      }
+    }
+  }
+}

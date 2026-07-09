@@ -1,0 +1,46 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Параболическая дуга: гравитация (Gravity=15) + подброс (ThrowUpwardBias=3). Серия скриншотов полёта.",
+  "id": "TC-F48-02",
+  "title": "Параболическая дуга (гравитация + подброс вверх)",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-48"], "acceptance": "Траектория параболическая (гравитация + вертикальная составляющая)", "markdown": "30-throw-physics.md", "markdown_anchor": "tc-f48-02" },
+  "categories": ["visual"],
+  "scene": "res://main.tscn",
+  "run": { "headless": false, "display": ":0" },
+  "max_duration_frames": 360,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "screenshot"],
+  "preconditions": ["Мяч активирован в руку; перед игроком длинный коридор"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 40, "reason": "бросок средней силы" },
+    { "type": "screenshot", "path": "/tmp/tc-f48-02-seq1.png", "reason": "начало полёта (мяч выше точки выпуска)" },
+    { "type": "wait_frames", "frames": 8 },
+    { "type": "screenshot", "path": "/tmp/tc-f48-02-seq2.png", "reason": "верхняя точка дуги" },
+    { "type": "wait_frames", "frames": 16 },
+    { "type": "screenshot", "path": "/tmp/tc-f48-02-seq3.png", "reason": "нисходящая ветвь → касание пола" },
+    { "type": "wait_frames", "frames": 120, "reason": "дождаться land" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Throw\\] launch force=", "reason": "бросок выпущен" },
+    { "kind": "log_contains", "pattern": "\\[Throw\\] land → WorldItem at", "reason": "снаряд завершил полёт" },
+    {
+      "kind": "manual_visual_check",
+      "description": "На серии скриншотов мяч сначала поднимается выше точки выпуска (верхняя точка), затем опускается до пола — классическая дуга; физика «резкая» (Gravity=15, не плавающая).",
+      "md_ref": "30-throw-physics.md → TC-F48-02",
+      "screenshots": ["/tmp/tc-f48-02-seq1.png", "/tmp/tc-f48-02-seq2.png", "/tmp/tc-f48-02-seq3.png"]
+    }
+  ],
+  "manual_verification_ref": "30-throw-physics.md → TC-F48-02, «Верификация»",
+  "expected_result_summary": "Мяч проходит дугу: подъём → верхняя точка → спуск до пола."
+}

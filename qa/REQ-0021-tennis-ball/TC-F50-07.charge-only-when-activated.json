@@ -1,0 +1,42 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Заряд возможен только когда мяч активирован. Без активации зажатие ЛКМ не даёт заряда (ExternalSpeedFactor=1.0, броска нет, HandItem отсутствует).",
+  "id": "TC-F50-07",
+  "title": "Заряд возможен только в состоянии Activated",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-50"], "acceptance": "Заряд только когда мяч активирован; вне Activated ЛКМ — обычное поведение", "markdown": "20-input-charge-cancel.md", "markdown_anchor": "tc-f50-07" },
+  "categories": ["input"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 240,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "node_property_read"],
+  "preconditions": ["Мяч НЕ активирован (лежит в слоте)"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира; мяч в слоте, в руке пусто" }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 40, "reason": "зажать ЛКМ без активированного мяч" },
+    { "type": "wait_frames", "frames": 20 }
+  ],
+  "assertions": [
+    { "kind": "log_not_contains", "pattern": "\\[Inventory\\] Throw 'tennis_ball'", "reason": "броска нет" },
+    { "kind": "log_not_contains", "pattern": "\\[Throw\\] launch", "reason": "снаряд не создан" },
+    {
+      "kind": "node_property",
+      "path": "/root/Main/Player",
+      "property": "ExternalSpeedFactor",
+      "equals": 1.0,
+      "at": "end",
+      "reason": "замедления нет — заряд не начался"
+    },
+    {
+      "kind": "node",
+      "path": "/root/Main/Player/ModelPivot/Character/Rig/GeneralSkeleton/HandAnchor/HandItem",
+      "exists": false,
+      "at": "end",
+      "reason": "мяч в руке отсутствует (не активирован)"
+    }
+  ],
+  "manual_verification_ref": "20-input-charge-cancel.md → TC-F50-07, «Верификация»",
+  "expected_result_summary": "Без активации ЛКМ не заряжает: нет Throw, ExternalSpeedFactor=1.0, HandItem нет."
+}

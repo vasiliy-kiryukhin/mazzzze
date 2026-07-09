@@ -1,0 +1,40 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "При активации проигрывается жест взятия предмета в руку (PlayPickupGesture → анимация Interact).",
+  "id": "TC-VIS-07",
+  "title": "Анимация игрока при активации/броске (жест взятия)",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-47"], "acceptance": "При активации — короткий жест взятия (F-15)", "markdown": "50-visual.md", "markdown_anchor": "tc-vis-07" },
+  "categories": ["animation", "model"],
+  "scene": "res://main.tscn",
+  "run": { "headless": false, "display": ":0" },
+  "max_duration_frames": 240,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "screenshot"],
+  "preconditions": ["Мяч в инвентаре, НЕ активирован"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap", "reason": "открыть инвентарь" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap", "reason": "выбрать ряд 1" },
+    { "type": "wait_frames", "frames": 5 }
+  ],
+  "steps": [
+    { "type": "screenshot", "path": "/tmp/tc-vis-07-before.png", "reason": "до активации — рука в покое" },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч → PlayPickupGesture" },
+    { "type": "wait_frames", "frames": 4 },
+    { "type": "screenshot", "path": "/tmp/tc-vis-07-gesture.png", "reason": "проигрывание жеста взятия (рука в движении)" },
+    { "type": "wait_frames", "frames": 30 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Inventory\\] Activate 'tennis_ball' → hand \\(slot 1 reserved\\)", "reason": "активация выполнена" },
+    {
+      "kind": "manual_visual_check",
+      "description": "В момент активации модель игрока проигрывает короткий жест взятия (анимация Interact) — характерное движение руки, не T-поза/статика.",
+      "md_ref": "50-visual.md → TC-VIS-07",
+      "screenshots": ["/tmp/tc-vis-07-before.png", "/tmp/tc-vis-07-gesture.png"]
+    }
+  ],
+  "manual_verification_ref": "50-visual.md → TC-VIS-07, «Верификация»",
+  "expected_result_summary": "При активации проигрывается жест взятия (Interact)."
+}

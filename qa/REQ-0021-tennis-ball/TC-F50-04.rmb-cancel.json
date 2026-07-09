@@ -1,0 +1,54 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "RMB (throw_cancel) во время заряда → отмена: мяч остаётся в руке, броска нет, скорость восстановлена.",
+  "id": "TC-F50-04",
+  "title": "RMB во время заряда → отмена (мяч остаётся, броска нет)",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-50"], "acceptance": "RMB во время заряда — заряд сбрасывается, мяч в руке, броска нет", "markdown": "20-input-charge-cancel.md", "markdown_anchor": "tc-f50-04" },
+  "categories": ["input"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 300,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "node_property_read"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "press", "reason": "зажать ЛКМ" },
+    { "type": "wait_frames", "frames": 42, "reason": "накопить заряд (~0.7 с)" },
+    { "type": "action", "name": "throw_cancel", "mode": "tap", "reason": "RMB — отменить заряд" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "action", "name": "use_activated", "mode": "release", "reason": "подстраховка: отпустить ЛКМ после отмены — броска быть не должно" },
+    { "type": "wait_frames", "frames": 20 }
+  ],
+  "assertions": [
+    { "kind": "log_not_contains", "pattern": "\\[Inventory\\] Throw 'tennis_ball'", "reason": "отмена не выпускает бросок" },
+    { "kind": "log_not_contains", "pattern": "\\[Throw\\] launch", "reason": "снаряд не создан" },
+    {
+      "kind": "node_property",
+      "path": "/root/Main/Player",
+      "property": "ExternalSpeedFactor",
+      "equals": 1.0,
+      "at": "end",
+      "reason": "после отмены скорость восстановлена"
+    },
+    {
+      "kind": "node",
+      "path": "/root/Main/Player/ModelPivot/Character/Rig/GeneralSkeleton/HandAnchor/HandItem",
+      "exists": true,
+      "at": "end",
+      "reason": "мяч остаётся в кисти после отмены"
+    }
+  ],
+  "manual_verification_ref": "20-input-charge-cancel.md → TC-F50-04, «Верификация»",
+  "expected_result_summary": "RMB отменяет заряд: нет Throw/launch; ExternalSpeedFactor=1.0; мяч в кисти."
+}

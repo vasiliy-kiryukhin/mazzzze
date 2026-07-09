@@ -1,0 +1,56 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Предохранитель MaxAirborneTime (6 с): даже не останавливаясь по скорости, снаряд обязан стать WorldItem не позднее ~360 кадров после launch.",
+  "id": "TC-F48-08",
+  "title": "Предохранитель MaxAirborneTime — принудительная остановка",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-48"], "acceptance": "Предохранительный останов по времени (6 с)", "markdown": "30-throw-physics.md", "markdown_anchor": "tc-f48-08" },
+  "categories": ["logic"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "flaky": true,
+  "retry": 2,
+  "on_no_setup": "skip",
+  "setup_strategy": "Воспроизводится только при «бесконечном отскоке» (бросок в замкнутый карман/угол). Если в текущей генерации мяч останавливается сам — сценарий SKIP (не FAIL).",
+  "max_duration_frames": 700,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance"],
+  "preconditions": ["Мяч активирован в руку; найден карман для долгого отскока"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "aim_camera", "yaw_deg": 90.0, "reason": "бросок в стену/карман под углом (вероятность долгого отскока)" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "action", "name": "use_activated", "mode": "hold", "frames": 120, "reason": "максимальная сила" },
+    { "type": "wait_frames", "frames": 380, "reason": "ждать до/чуть более MaxAirborneTime=6 с (360 кадров)" }
+  ],
+  "assertions": [
+    { "kind": "log_contains", "pattern": "\\[Throw\\] land → WorldItem at", "reason": "предохранитель гарантировал остановку" },
+    {
+      "kind": "node_by_type",
+      "parent": "/root/Main",
+      "type": "WorldItem",
+      "count_min": 1,
+      "at": "end",
+      "reason": "снаряд превратился в предмет (не висит вечно)"
+    },
+    {
+      "kind": "node_by_type",
+      "parent": "/root/Main",
+      "type": "ThrowProjectile",
+      "count_max": 0,
+      "at": "end",
+      "reason": "снаряд погашен"
+    }
+  ],
+  "manual_verification_ref": "30-throw-physics.md → TC-F48-08, «Верификация»",
+  "expected_result_summary": "land появляется не позже ~6 с после launch (предохранитель работает)."
+}

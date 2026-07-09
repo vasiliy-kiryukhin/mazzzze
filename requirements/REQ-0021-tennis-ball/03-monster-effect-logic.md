@@ -52,4 +52,4 @@
 - **Только большой размер:** воздействие на маленьких монстров (убийство) — будущая специализация.
 - Эффекты реализуются через реестр монстров ([REQ-0019/F-43](../REQ-0019-base-monster/04-data.md)) и состояния монстра ([F-41](../REQ-0019-base-monster/01-states-logic.md)).
 
-**Зависимости:** [REQ-0019-base-monster](../REQ-0019-base-monster/README.md) (восприятие [F-40](../REQ-0019-base-monster/02-perception-logic.md), состояния [F-41](../REQ-0019-base-monster/01-states-logic.md), реестр [F-43](../REQ-0019-base-monster/04-data.md)) — пока не реализован; интеграция мяч→монстр возможна после REQ-0019 (см. [design.md](./design.md)).
+**Зависимости:** [REQ-0019-base-monster](../REQ-0019-base-monster/README.md) (восприятие [F-40](../REQ-0019-base-monster/02-perception-logic.md), состояния [F-41](../REQ-0019-base-monster/01-states-logic.md), реестр [F-43](../REQ-0019-base-monster/04-data.md)) — **реализован**; обе ветви работают: стан — вызов `Stun()` у монстра, видевшего бросок; отвлечение — монстр сам замечает лежащий мяч через штатный скан привлекающих предметов (см. [design.md](./design.md)).

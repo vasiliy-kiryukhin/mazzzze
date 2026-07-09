@@ -1,0 +1,55 @@
+{
+  "$schema": "_scenario-schema.json",
+  "format_version": "1.0",
+  "_comment": "Зажать ЛКМ → заряд: мяч в руке, ExternalSpeedFactor занижен, броска нет.",
+  "id": "TC-F50-01",
+  "title": "Зажать ЛКМ → заряд (мяч в руке, сила растёт, замедление)",
+  "requirement": { "feature": "REQ-0021-tennis-ball", "functional": ["F-50"], "acceptance": "Зажать ЛКМ — мяч в руке, сила растёт, движение замедлено", "markdown": "20-input-charge-cancel.md", "markdown_anchor": "tc-f50-01" },
+  "categories": ["input", "model"],
+  "scene": "res://main.tscn",
+  "run": { "headless": true, "display": ":0" },
+  "max_duration_frames": 240,
+  "harness_requirements": ["capture_gd_print", "input_simulation", "frame_advance", "node_property_read"],
+  "preconditions": ["Мяч активирован в руку"],
+  "setup": [
+    { "type": "wait_frames", "frames": 90, "reason": "инициализация мира" },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key1", "mode": "tap" },
+    { "type": "wait_frames", "frames": 5 },
+    { "type": "key", "physical_keycode": "Key2", "mode": "tap", "reason": "активировать мяч" },
+    { "type": "wait_frames", "frames": 10 },
+    { "type": "action", "name": "inventory_toggle", "mode": "tap" },
+    { "type": "wait_frames", "frames": 10 }
+  ],
+  "steps": [
+    { "type": "action", "name": "use_activated", "mode": "press", "reason": "зажать ЛКМ — начать заряд ( НЕ отпускать)" },
+    { "type": "wait_frames", "frames": 30, "reason": "держать заряд; ExternalSpeedFactor занижается в _PhysicsProcess" }
+  ],
+  "assertions": [
+    { "kind": "log_not_contains", "pattern": "\\[Inventory\\] Throw 'tennis_ball'", "reason": "пока ЛКМ удерживается — броска нет" },
+    { "kind": "log_not_contains", "pattern": "\\[Throw\\] launch", "reason": "снаряд не создан" },
+    {
+      "kind": "node_property",
+      "path": "/root/Main/Player",
+      "property": "ExternalSpeedFactor",
+      "equals": 0.45,
+      "at": "end",
+      "reason": "во время заряда множитель скорости = MoveSpeedFactorWhileCharging (0.45)"
+    },
+    {
+      "kind": "node",
+      "path": "/root/Main/Player/ModelPivot/Character/Rig/GeneralSkeleton/HandAnchor/HandItem",
+      "exists": true,
+      "at": "end",
+      "reason": "мяч остаётся в кисти во время заряда"
+    },
+    {
+      "kind": "manual_visual_check",
+      "description": "Мяч в руке пульсирует масштабом (обратная связь по заряду).",
+      "md_ref": "20-input-charge-cancel.md → TC-F50-01"
+    }
+  ],
+  "manual_verification_ref": "20-input-charge-cancel.md → TC-F50-01, «Верификация»",
+  "expected_result_summary": "Зажатие ЛКМ не вызывает бросок; ExternalSpeedFactor=0.45; мяч в кисти; визуально — пульсация."
+}

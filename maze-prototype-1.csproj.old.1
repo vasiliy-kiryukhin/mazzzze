@@ -1,0 +1,22 @@
+<Project Sdk="Godot.NET.Sdk/4.6.3">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>mazeprototype1</RootNamespace>
+
+    <!-- Map engine: the maze-gen region façade (PlayersWorlds.Maps, net8.0,
+         BCL-only). Uses the local source checkout if it sits beside this repo
+         (fast iteration), otherwise the published NuGet package (other devs /
+         CI just `dotnet build`). Force the package with -p:MazeGenLocal=false. -->
+    <MazeGenLocal Condition="'$(MazeGenLocal)' == '' And Exists('../../krmrn42/maze-gen/src/PlayersWorlds.Maps.csproj')">true</MazeGenLocal>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(MazeGenLocal)' == 'true'">
+    <ProjectReference Include="../../krmrn42/maze-gen/src/PlayersWorlds.Maps.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(MazeGenLocal)' != 'true'">
+    <!-- Resolves once the library's first version is published to NuGet. -->
+    <PackageReference Include="PlayersWorlds.Maps" Version="0.1.*" />
+  </ItemGroup>
+</Project>

@@ -41,7 +41,7 @@ public partial class MonsterSpawner : Node3D
 				(c.Y + 0.5f) * cs + maze.WorldOffsetZ);
 			main.AddChild(monster);
 		}
-		GD.Print($"[MonsterSpawner] Spawned {cells.Count} Ifrit near start {start}");
+		GameLog.Print($"[MonsterSpawner] Spawned {cells.Count} Ifrit near start {start}");
 	}
 
 	// Клетки пола в кольце [Min..Max] клеток от старта, не слишком близко к игроку.

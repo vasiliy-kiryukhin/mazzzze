@@ -40,6 +40,12 @@ public partial class Player : CharacterBody3D
 	private float _zoomLevel;
 	private string _gesture; // одноразовый жест (взятие в руку), перекрывает локомоцию пока играет
 
+	// Внешний множитель скорости ходьбы (1 = обычная). Инвентарь занижает его при зарядке
+	// броска мяча (REQ-0021 / F-50), чтобы прицеливание давало паузу, но не превращалось в стояние.
+	public float ExternalSpeedFactor = 1.0f;
+	private Node3D _handItem;              // модель предмета «в руке» (мяч, REQ-0021 / 05-visual)
+	private BoneAttachment3D _handBone;    // крепление к кости кисти (следует за анимацией)
+
 	// Planar (XZ) world directions, for the mini-map. Facing = where the player model
 	// looks (last movement direction); CamForward = the camera's horizontal heading.
 	public Vector2 PlanarFacing
@@ -71,7 +77,7 @@ public partial class Player : CharacterBody3D
 		_cameraYaw.Rotation = new Vector3(0, Mathf.DegToRad(yawDeg), 0);
 		_cameraPitch.Rotation = new Vector3(Mathf.DegToRad(pitchDeg), 0, 0);
 		_chunkManager?.UpdateChunks(new Vector2(Position.X, Position.Z));
-		GD.Print($"[Player] Teleport → world=({Position.X:F1}, {Position.Z:F1}) yaw={yawDeg:F0} pitch={pitchDeg:F0}");
+		GameLog.Print($"[Player] Teleport → world=({Position.X:F1}, {Position.Z:F1}) yaw={yawDeg:F0} pitch={pitchDeg:F0}");
 	}
 
 	public override void _Ready()
@@ -112,7 +118,7 @@ public partial class Player : CharacterBody3D
 				0.3f,
 				start.Y * cs + m.WorldOffsetZ + cs / 2
 			);
-			GD.Print($"[Player] Start cell=({start.X},{start.Y}) world=({Position.X:F1}, {Position.Y:F1}, {Position.Z:F1})");
+			GameLog.Print($"[Player] Start cell=({start.X},{start.Y}) world=({Position.X:F1}, {Position.Y:F1}, {Position.Z:F1})");
 		}
 	}
 
@@ -170,10 +176,11 @@ public partial class Player : CharacterBody3D
 		moveDir = moveDir.Normalized();
 
 		bool moving = moveDir != Vector3.Zero;
+		float speed = Speed * ExternalSpeedFactor;
 		if (moving)
 		{
-			vel.X = moveDir.X * Speed;
-			vel.Z = moveDir.Z * Speed;
+			vel.X = moveDir.X * speed;
+			vel.Z = moveDir.Z * speed;
 			_modelPivot.Basis = Basis.LookingAt(moveDir, Vector3.Up);
 		}
 		else
@@ -232,6 +239,48 @@ public partial class Player : CharacterBody3D
 		_anim.Play(name, AnimBlend);
 		_anim.SpeedScale = 1.0f;
 		_gesture = name;
+	}
+
+	// Модель предмета «в руке» (REQ-0021 / 05-visual): крепится через BoneAttachment3D к кости
+	// правой кисти (`RightHand`) скелета игрока, поэтому **следует за анимацией** и всегда выглядит
+	// в руке при любом ракурсе камеры. height — целевая высота модели, м; модель центрируется и
+	// масштабируется по AABB (как WorldItem) и слегка смещается в ладонь (`HandPalmOffset`).
+	private static readonly Vector3 HandPalmOffset = new(0.0f, 0.03f, 0.06f);
+
+	public void ShowHandItem(Node3D model, float height)
+	{
+		HideHandItem();
+		var skel = GetNodeOrNull<Skeleton3D>("ModelPivot/Character/Rig/GeneralSkeleton");
+		if (skel == null)
+			return;
+		_handBone = new BoneAttachment3D { Name = "HandAnchor", BoneName = "RightHand" };
+		skel.AddChild(_handBone);
+		_handItem = new Node3D { Name = "HandItem", Position = HandPalmOffset };
+		_handBone.AddChild(_handItem);
+		_handItem.AddChild(model);
+		Aabb b = WorldItem.ComputeSceneAabb(model);
+		float scale = b.Size.Y > 0.0001f ? height / b.Size.Y : 1.0f;
+		model.Scale = Vector3.One * scale;
+		model.Position = -(b.Position + b.Size * 0.5f) * scale; // центр модели в точке крепления
+	}
+
+	public void HideHandItem()
+	{
+		_handItem = null;
+		_handBone?.QueueFree();
+		_handBone = null;
+	}
+
+	// Мировая точка выпуска броска — центр мяча в руке (REQ-0021 / F-48). До появления кисти — глаза.
+	public Vector3 HandThrowOrigin =>
+		_handItem != null && IsInstanceValid(_handItem) ? _handItem.GlobalPosition : EyePosition;
+
+	// Пульсация масштаба предмета в руке (обратная связь по силе заряда броска, 0..1).
+	public void SetHandItemCharge(float t)
+	{
+		if (_handItem == null)
+			return;
+		_handItem.Scale = Vector3.One * (1.0f + 0.35f * Mathf.Sin(t * Mathf.Pi * 6.0f) * t);
 	}
 
 	// «Пружинная рука»: камера не должна проникать в стены узкого коридора.
