@@ -33,6 +33,11 @@ public partial class MazeData : Node
 
 	public Vector2I PlayerStartCell { get; private set; }
 
+	[Export]
+	public EnvironmentId RegionEnvironment = EnvironmentId.DarkCanyon;
+
+	public int WorldSeed { get; private set; }
+
 	// The rendered region size in Block cells (replaces the old fixed
 	// 10000×10000 world bounds).
 	public Vector2I RegionSize =>
@@ -55,6 +60,7 @@ public partial class MazeData : Node
 		// Recipe is OUR (client) setting: a Hunt-and-Kill maze with square 1×1
 		// cells, so tiles are square in world space.
 		var seed = RandomizeEachLaunch ? (int)Time.GetTicksUsec() : FixedSeed;
+		WorldSeed = seed;
 		var world = new World(
 			new NullRegionStore(), seed,
 			new MgVector(RegionFootprintSide, RegionFootprintSide),
@@ -71,7 +77,7 @@ public partial class MazeData : Node
 		PlayerStartCell = _entrance;
 
 		GD.Print($"[MazeData] region {RegionSize.X}x{RegionSize.Y} block cells, " +
-			$"seed={seed}, entrance={_entrance}, exit={_exit}, " +
+			$"seed={seed}, environment={RegionEnvironment}, entrance={_entrance}, exit={_exit}, " +
 			$"offset=({WorldOffsetX:F0}, {WorldOffsetZ:F0})");
 	}
 
@@ -92,6 +98,25 @@ public partial class MazeData : Node
 		if (region == null) return false;
 		var cell = new MgVector(wx, wz);
 		return region.Contains(cell) && region.CellAt(cell).IsPassable;
+	}
+
+	private const string TagWallAxisX = "MAZE2D_WALL_AXIS_X";
+	private const string TagWallAxisY = "MAZE2D_WALL_AXIS_Y";
+
+	public static WallAxis WallAxisAt(int wx, int wz)
+	{
+		var region = Instance?._region;
+		if (region == null) return WallAxis.None;
+		var cell = new MgVector(wx, wz);
+		if (!region.Contains(cell)) return WallAxis.None;
+		var tags = region.CellAt(cell).Tags;
+		if (tags == null) return WallAxis.None;
+		for (int i = 0; i < tags.Count; i++)
+		{
+			if (tags[i] == TagWallAxisX) return WallAxis.X;
+			if (tags[i] == TagWallAxisY) return WallAxis.Z;
+		}
+		return WallAxis.None;
 	}
 
 	// Генерация данных чанка: 0 = пол (коридор), 1 = стена.

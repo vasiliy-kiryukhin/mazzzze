@@ -106,13 +106,13 @@ Main (Node3D)                              - main.tscn, root
 ├── Ground (StaticBody3D)                  - collision floor, Y=-0.5
 │   ├── CollisionShape3D                   - BoxShape3D(256, 1, 256)
 │   └── MeshInstance3D                     - BoxMesh(256, 1, 256), green-brown
-├── DirectionalLight3D                     - "sun", ~42 deg elevation, ahead (-Z), energy=2.4, big disk (angular_distance 5)
+├── DirectionalLight3D                     - "sun"; energy/color/angle/visibility set per region by LightingController (§5.7) - OFF for DarkCanyon (default)
 ├── MazeData (Node + MazeData.cs)         - Singleton, procedural world data
 ├── Player (CharacterBody3D)              - instance of player.tscn
 │   ├── ModelPivot (Node3D, Y=-0.2)       - faces movement direction
 │   │   └── Character (AnimationLibrary_Godot_Standard.glb, scale=1.0) - rigged humanoid + AnimationPlayer
 │   ├── CollisionShape3D (Y=0.35)         - SphereShape3D, radius=0.3
-│   ├── HeadLight (OmniLight3D, Y=4.0)    - travels with player, lights nearby tiles/walls
+│   ├── HeadLight (OmniLight3D, Y=4.0)    - travels with player; energy/color/range/attenuation set per region by LightingController (§5.7)
 │   └── CameraYaw (Node3D, Y=2.0)         - horizontal orbit, elevated rig
 │       └── CameraPitch (Node3D, default -50 deg) - vertical tilt, angled down
 │           └── Camera3D (Z=10, current)  - perspective, default FOV
@@ -121,7 +121,8 @@ Main (Node3D)                              - main.tscn, root
 │       └── GridMap (cell_size=3.6,1,3.6, cell_center_y=false) - renders Floor/Wall tiles
 ├── MonsterSpawner (Node3D + MonsterSpawner.cs) - minimal debug spawner (§5.8)
 ├── Ifrit (xN, CharacterBody3D + Ifrit.cs) - monsters, spawned under Main (persistent) (§5.8)
-├── WorldEnvironment                      - procedural sky, ambient light
+├── LightingController (Node + LightingController.cs) - applies the region kit's LightingProfile to sun/env/HeadLight (§5.7)
+├── WorldEnvironment                      - procedural sky; ambient/sky/fog set per region by LightingController (§5.7)
 └── HUD (CanvasLayer)
     ├── Minimap (Control + Minimap.cs)    - top-left mini-map overlay (§5.10)
     ├── Inventory (Control + InventoryHud.cs) - bottom-right inventory + item-system hub (§5.11)
@@ -156,6 +157,18 @@ Main (Node3D)                              - main.tscn, root
 | WorldOffsetX | -RegionSize.X * CellWorldSize / 2 | ≈ -27 |
 | WorldOffsetZ | -RegionSize.Y * CellWorldSize / 2 | ≈ -27 |
 | PlayerStartCell | region **Entrance** POI cell (varies per seed) | e.g. (9, 3) |
+
+**Environment kit selection (`REQ-0022`, US-22 / F-51):**
+
+| Member | Type | Meaning |
+|--------|------|---------|
+| `RegionEnvironment` | `[Export] EnvironmentId` | Which environment kit the region uses — `SlotCanyon`, `Ravine`, or `DarkCanyon` (default). One value for the whole region; picks both the wall-rock look **and** the lighting mood (§5.7). Flip in the editor to A/B the kits. |
+| `WorldSeed` | `int` (public get, private set) | The region's generation seed, captured in `_Ready`. Consumed by `Chunk.CellSeed` so wall-rock placement is deterministic per world cell (see 5.3). |
+
+`ChunkManager.LoadChunk` reads `MazeData.Instance.RegionEnvironment` and resolves the corresponding
+kit via `EnvironmentKitRegistry.Get(...)` once per chunk load, passing it into `Chunk.Setup`. See
+[`requirements/REQ-0022-environment-kits/design.md`](./REQ-0022-environment-kits/design.md) for the
+full `EnvironmentKit`/`SlotCanyonKit`/`RavineKit`/`EnvironmentKitRegistry` design.
 
 `WorldOffset` is no longer a fixed `-18000` constant — it is derived from the region size and
 returns 0 until `_Ready()` builds the region (nothing may read it earlier). The region is
@@ -254,7 +267,8 @@ origin sits at world Y=0; the Floor tile then rests on the Y=0 plane and walls r
 mesh (30 tall, offset +15), NOT by `cell_size.y`. Setting `cell_size.y` to the wall height while
 `cell_center_y` is true would push the floor up by half the wall height and drop the player below it.
 
-**Setup(Vector2 coord, int[,] chunkData):**
+**Setup(Vector2 coord, int[,] chunkData, EnvironmentKit kit)** (`kit` param added by `REQ-0022`,
+US-22/F-51..F-53 — see [`REQ-0022-environment-kits/design.md`](./REQ-0022-environment-kits/design.md)):
 
 1. Store chunkCoord
 2. gridmap.Clear() - remove previous tiles
@@ -262,8 +276,21 @@ mesh (30 tall, offset +15), NOT by `cell_size.y`. Setting `cell_size.y` to the w
    - cellType = chunkData[x, z]
    - tileId = 0 if floor, 1 if wall, -1 if unknown
    - gridmap.SetCellItem(new Vector3I(x, 0, z), tileId)
+   - if cellType == 1 (wall): compute `seed = CellSeed(MazeData.Instance.WorldSeed, wx, wz)`
+     (world cell coords, FNV-1a) and the cell's local center; call `kit.PlaceRocks(center, seed)`
+     and bucket each returned `RockPlacement` by prototype index
+4. After the cell loop: for each non-empty prototype bucket, build one `MultiMeshInstance3D`
+   (`Mesh = kit.Prototypes[i]`, `MaterialOverride = kit.RockMaterial`, one instance transform per
+   bucketed placement) and add it as a child of the chunk
 
 GridMap places each tile centred at the cell's world position. cell_size=(3.6,1,3.6) means adjacent cells are 3.6 world-units apart in XZ. With cell_center_y=false the floor sits on the Y=0 plane.
+
+**Wall rock rendering (`REQ-0022`):** the GridMap wall item (id 1, below) supplies collision and
+opacity only; the *visible* rock surface on top of it is built per-chunk from
+`EnvironmentKitRegistry.Get(MazeData.Instance.RegionEnvironment)`, batched into at most
+`kit.Prototypes.Length` `MultiMeshInstance3D`s per chunk (≤ 8 draw calls/chunk today). Placement is
+deterministic per world cell (`CellSeed`), so rocks do not change or flicker as chunks stream in
+and out. Full design: [`REQ-0022-environment-kits/design.md`](./REQ-0022-environment-kits/design.md).
 
 ### 5.4 MeshLibrary - Maze Tiles
 
@@ -281,20 +308,35 @@ GridMap places each tile centred at the cell's world position. cell_size=(3.6,1,
 | mesh_transform | Identity (Y=0, centred on floor) |
 | Shadow casting | On |
 
-**Item 1 - Wall:** dark, vertically-fluted canyon rock (matches the reference look in `walls.png`).
+**Item 1 - Wall:** dark occluder + collision box (`REQ-0022`, US-22/F-52 — see below). Prior to
+`REQ-0022` this item's own `BoxMesh` carried a fluted-noise material and *was* the visible wall
+surface; since `REQ-0022` the visible rock surface is a set of kit-driven `MultiMeshInstance3D`s
+built by `Chunk.Setup` on top of this box (see 5.3), and this item's material was restyled to a
+plain dark occluder so it no longer needs to look like rock itself — it only has to stay opaque
+behind whatever gaps exist between the instanced rocks.
 
 | Property | Value |
 |----------|-------|
 | Mesh | BoxMesh(**3.66**, 30, **3.66**) - tall pillar, slightly larger than the 3.6 cell (see "Tile overlap" below) |
-| Material | StandardMaterial3D, see below |
+| Material | StandardMaterial3D, flat dark occluder: `albedo_color = Color(0.05, 0.045, 0.04, 1)`, `roughness = 1.0`, `metallic_specular = 0.0`, no normal map |
 | Collision | BoxShape3D(3.6, 30, 3.6) - matches the **cell** size, not the mesh - with Transform3D Y=+15 |
 | mesh_transform | Transform3D Y=+15 - wall SITS ON the floor (Y=0 to 30) |
 | Shadow casting | On |
 
-Wall material detail (`StandardMaterial3D_wall` in `MazeTiles.tres`):
-- **Noise:** one `FastNoiseLite` (Cellular-ish, frequency 0.05, 6 fractal octaves) with **domain warp enabled** (type 1, amplitude 12, frequency 0.02) so the rock reads as organic channelled stone rather than even speckle. Baked into two 512² seamless `NoiseTexture2D`s — an albedo one through a 4-stop `Gradient` (near-black valleys `Color(0.035,0.03,0.026)` → dusty brown ridges `Color(0.34,0.3,0.25)`) and a normal map (`as_normal_map`, bump_strength 4.5).
-- **Mapping:** world-space triplanar (`uv1_world_triplanar`) with an anisotropic `uv1_scale = Vector3(0.14, 0.06, 0.14)` — chunky horizontally, ~2.3× stretched vertically. This turns the isotropic noise into the tall **vertical fluting** seen in the reference. (Stretching further — uv1_scale.y below ~0.05 — fans the streaks into "fur"; 0.06 is the stable maximum. World-space mapping also makes adjacent tiles blend into one continuous wall with no per-tile seams.)
-- roughness 0.92, metallic_specular 0.18, normal_scale 1.8.
+**Pre-`REQ-0022` wall material (superseded, sub-resources still present but unreferenced in
+`MazeTiles.tres`):** one `FastNoiseLite` (Cellular-ish, frequency 0.05, 6 fractal octaves) with
+domain warp enabled (type 1, amplitude 12, frequency 0.02), baked into an albedo `NoiseTexture2D`
+through a 4-stop `Gradient` and a normal-map `NoiseTexture2D`, mapped world-space triplanar with
+anisotropic `uv1_scale = Vector3(0.14, 0.06, 0.14)` for vertical fluting. Kept only as orphaned
+sub-resources in the `.tres` file (harmless); no longer assigned to item 1.
+
+**Visible wall rock surface (`REQ-0022`, US-22/F-51..F-53):** built by `Chunk.Setup` per wall cell
+via the region's `EnvironmentKit` (`EnvironmentKitRegistry.Get(MazeData.Instance.RegionEnvironment)`),
+batched into per-prototype `MultiMeshInstance3D`s (see 5.3). Two kits exist —
+`SlotCanyonKit` (8 `Cliff*` meshes, `Cliff_Material_Red_Sand.tres`, tight/tall/near-vertical) and
+`RavineKit` (same 8 meshes, `Cliff_Material_Photoscan.tres`, tilted/wider-spread) — sourced from
+`art/RockPack1/` (Arnklit Cliffs & Rocks v1_02). Full design, parameters, and scope limits:
+[`requirements/REQ-0022-environment-kits/design.md`](./REQ-0022-environment-kits/design.md).
 
 The Y=+15 offset (= WallHeight/2) is critical: without it, the wall BoxMesh would be centred at Y=0 (half below floor). With the offset, wall occupies Y=0 to Y=30, on top of floor tile (Y=-0.1 to Y=0.1). Walls tower far above the camera, blocking any over-the-top view of the maze.
 
@@ -406,24 +448,32 @@ Ground collision spans Y=[-1.0, 0.0]. Top surface at Y=0. Provides flat floor ac
 
 ### 5.7 Lighting and Environment
 
-**DirectionalLight3D (the "sun"):**
-- Light travels (0, -0.669, 0.743): ~42 deg below horizontal, heading +Z. The sun therefore sits AHEAD of the player (toward -Z, where the corridor opens) at a ~42 deg elevation — high enough to read as "up there" yet low enough that, looking down a long straight corridor, the **sun disk appears high up at the far end** (the goal in `walls.png`) instead of out of frame overhead. It front-lights the player and the corridor floor rather than only grazing the wall tops. The azimuth is grid-aligned (purely a rotation about X), so the disk lines up with the maze's straight runs.
-- Energy 2.4, light_color warm `Color(1, 0.88, 0.72)`, light_specular 1.0.
-- **light_angular_distance 5.0** — deliberately large: it grows the rendered sun disk and softens the shadows into the long, soft cast seen in the reference.
-- Shadows enabled (mode 2, max distance 120).
+**Per-region lighting (`REQ-0022`, US-22 / F-54).** Lighting is a property of the region's
+`EnvironmentKit`, not a fixed scene setup — so one region can be a pitch-black dungeon while another
+bakes under a scorching sun. Each kit exposes a **`LightingProfile`** (`src/LightingProfile.cs`,
+plain data); **`LightingController`** (`src/LightingController.cs`, `Main/LightingController`,
+wired to the sun / `WorldEnvironment` / `Player/HeadLight` via three `[Export] NodePath`s) resolves
+the resident region's kit in `_Ready` — `EnvironmentKitRegistry.Get(MazeData.Instance.RegionEnvironment).Lighting`
+— and applies it before the first frame (no flash of editor defaults). The values stored in
+`main.tscn` / `player.tscn` are editor defaults only (aligned to DarkCanyon); the controller
+overwrites them at runtime.
 
-**HeadLight (OmniLight3D, child of Player):**
-- Local point light at Y=4 above the player (just above head height). Travels with the player so the player, the floor tiles underfoot and the nearby walls are always clearly lit, even at the bottom of the deep canyons where the directional sun barely reaches.
-- light_color warm white (1, 0.96, 0.86), energy 4.0, omni_range 20, omni_attenuation 0.7 (gentle falloff so a few cells around the player stay bright). Shadows off — it is a fill light.
+`LightingProfile` fields (all tunable per kit):
 
-**WorldEnvironment:**
-- Background: Sky (mode=2)
-- Sky: `ProceduralSkyMaterial` — dark blue zenith `Color(0.04,0.05,0.08)` fading to a **warm horizon glow** `Color(0.5,0.42,0.32)` (sky_curve 0.09). The sun disk follows the DirectionalLight3D direction; `sun_angle_max 42` enlarges its glow halo and `sun_curve 0.12` softens the falloff, so the disk reads as a bright, bloomed sun at the corridor's end. sky_energy_multiplier 0.85.
-- Ambient light: source=Sky (mode=2), energy 0.6, cool tint `Color(0.4,0.45,0.6)` — a low, uniform non-occluded fill so shadowed canyon surfaces stay just visible without washing out the dramatic contrast.
-- Reflected light: source=Sky (mode=1)
-- **Glow/bloom:** enabled, intensity 0.7, strength 1.15, bloom 0.2, hdr_threshold 0.95 — the low threshold lets the bright sun disk bloom into the soft halo that fills the end of the corridor.
-- Tonemap: Filmic (mode 3), white 6.0.
-- SDFGI: disabled
+| Field | Governs | Notes |
+|-------|---------|-------|
+| `SunVisible` / `SunEnergy` / `SunColor` / `SunPitchDeg` / `SunYawDeg` | DirectionalLight3D | `SunVisible=false` makes the region dark; pitch is elevation (more negative = higher sun). |
+| `AmbientColor` / `AmbientEnergy` | Environment ambient | `AmbientEnergy <= 0` → ambient **Disabled**. Flat COLOR ambient is uniform and ignores occlusion, so it lights downward-facing rock undersides ("glow from below") — disabling it is what makes undersides go dark. |
+| `SkyTopColor` / `SkyHorizonColor` / `SkyEnergy` | `ProceduralSkyMaterial` background | There is no ceiling geometry, so the sky is visible looking up; a dungeon needs it near-black. |
+| `FogEnabled` / `FogColor` / `FogDensity` | Environment depth fog | Fades distance to black so the torch doesn't end in a hard `omni_range` ring. |
+| `HeadLightEnergy` / `HeadLightColor` / `HeadLightRange` / `HeadLightAttenuation` / `HeadLightHeight` / `HeadLightShadow` | Player OmniLight3D | `Range` is the hard cutoff; `Attenuation` shapes falloff (>1 pulls brightness in toward the player, <1 keeps it bright far out). `Height` = local Y above the player: higher grazes close vertical walls (dimmer walls) while the horizontal floor pool stays lit. `Shadow` enables the omni cubemap shadow so rocks + wall occluder boxes actually block the torch (rocks stop lighting whatever is behind them) — costs a per-frame shadow render, so it is off by default and on only for DarkCanyon. |
+
+Region profiles today:
+- **DarkCanyon** (default): sun **off**, ambient **off**, near-black sky (energy 0.12), subtle black fog (density 0.035). HeadLight warm `(1,0.945,0.83)`, energy 2.5, range 22.5, attenuation 1.25, height 4.0, **shadow on** — a soft pool reaching ~4–5 cells that fades to black, with rocks/walls casting shadows so the torch doesn't shine through them. The pitch-black dungeon.
+- **SlotCanyon**: scorching sun (energy 3.0, warm `(1,0.9,0.72)`, pitch -62), warm ambient fill (0.45), bright sky, no fog; HeadLight dimmed to 0.5 (the sun already lights everything).
+- **Ravine**: overcast — soft cool sun (energy 1.2, pitch -55), grey ambient (0.5), grey sky, faint grey haze (density 0.012); mid HeadLight (1.0).
+
+**Unchanged scene defaults** (the controller does not touch these): tonemap Filmic/ACES (mode 3, white 6.0), glow/bloom (intensity 0.7, strength 1.15, bloom 0.2, hdr_threshold 0.95), reflected light source Disabled, SDFGI disabled.
 
 ### 5.8 Monsters - Base Template and Ifrit (US-19 / US-20)
 

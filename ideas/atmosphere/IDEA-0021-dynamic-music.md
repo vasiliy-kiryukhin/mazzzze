@@ -4,4 +4,4 @@
 
 Музыка меняется по региону/событиям: усиление напряжения при близости монстра, спокойные темы у алтарей. Сейчас трек `House In a Forest Loop.ogg` есть, но не интегрирован.
 
-**Связи:** IDEA-0010, IDEA-0016, [TECH_SPEC §5.9](../../requirements/TECH_SPEC.md#59-art-assets)
+**Связи:** IDEA-0010, IDEA-0016, IDEA-0054 (эмбиент-подложки), [TECH_SPEC §5.9](../../requirements/TECH_SPEC.md#59-art-assets)

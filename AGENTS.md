@@ -93,6 +93,27 @@ the vertical noise streaks fan out into "fur".
   Manhattan). Each chunk is 16×16 cells = 57.6×57.6 world units. `ChunkManager.UpdateChunks()`
   is called every `_PhysicsProcess` from `Player.cs`.
 - **MazeTiles.tres** is a `MeshLibrary` with exactly 2 items: id 0 = Floor, id 1 = Wall.
+- **Wall rendering — environment kits (`REQ-0022`)**: the GridMap Wall item is now a **dark
+  occluder + collision box only** (flat near-black material, geometry unchanged); the *visible*
+  wall surface is kit-driven **instanced rock geometry** — `Chunk.Setup(coord, chunkData,
+  EnvironmentKit kit)` places rocks per wall cell (deterministic per world cell, `Chunk.CellSeed`)
+  and batches them into one `MultiMeshInstance3D` per rock prototype. The kit is resolved from
+  `MazeData.RegionEnvironment` (`[Export] EnvironmentId`, one value per region) via
+  `EnvironmentKitRegistry`; two kits exist — `SlotCanyonKit` (red-sand, tall/tight cliffs) and
+  `RavineKit` (grey photoscan, tilted/spread) — both built from `art/RockPack1/` meshes (Arnklit
+  Cliffs & Rocks Pack 1, `v1_02`). Rocks are visual-only, no collision. Details:
+  `requirements/REQ-0022-environment-kits/design.md`.
+- **Per-region lighting (`REQ-0022`, US-22/F-54)**: each `EnvironmentKit` also carries a
+  **`LightingProfile`** (`src/LightingProfile.cs`, plain data) — sun (visible/energy/color/pitch),
+  ambient fill, sky colors, depth fog, and the player `HeadLight` (energy/color/range/attenuation/height/shadow — shadow enables the omni cubemap so rocks/walls block the torch, on for DarkCanyon).
+  `LightingController` (`src/LightingController.cs`, `Main/LightingController`, wired to the sun /
+  `WorldEnvironment` / `Player/HeadLight` by `[Export] NodePath`) resolves the resident region's kit
+  in `_Ready` and applies its profile before the first frame. **DarkCanyon** = pitch-black dungeon
+  (sun off, ambient off, near-black sky, subtle black fog, only the warm short-range torch);
+  `SlotCanyon` = scorching sun; `Ravine` = flat overcast. Stored `main.tscn`/`player.tscn` light
+  values are editor defaults only (aligned to DarkCanyon) — the controller overwrites at runtime.
+  The old "glow from below" on rock undersides was flat COLOR ambient (uniform, ignores occlusion);
+  disabling ambient fixed it.
 - **Item system** hubs in `InventoryHud.cs` (`HUD/Inventory`) — it owns the item state machine (InWorld / InInventory / Activated). `Inventory`/`Item` = 12-slot model; `Item.Usage` is ImmediateA (`Use()`) or ActivatedB (into hand). Slot icons render `Item.BuildModel()` (glb, or a procedural polaroid for `PhotoItem`) into a `SubViewport`; same factory builds the in-world model (scale = `WorldItemSizeFraction` 0.25 × player height). Drop (`DropProjectile`) flings a "star" that lands as a `WorldItem` (static `WorldItem.All` registry). Pickup is **automatic** (no key): scan registry for nearest armed item in range with line-of-sight; `PickupProjectile` flies it back. `ItemStar` is the shared star visual.
   - **Activation / reservation** (F-18/B, F-19a): a pattern-B item stays in its slot but is flagged `_activatedItem`/`_reservedSlot`, blocking the slot; `ActivateSlot`/`Deactivate`/`DropActivated`/`ConsumeActivated` transition it. Activation plays `Player.PlayPickupGesture()` (the `Interact` clip). **Vintage camera** (REQ-0013): **LMB** (`use_activated`) opens `ViewfinderHud` — a framed **window above the player's head** (third-person view kept, no darken) showing a `SubViewport` first-person level/yaw lens view, sepia + vignette + 3→2→1 timer (`TickSeconds` 0.6667, 3× faster), forward focus ray min 1.8; on fire a `PhotoItem` is created into the reserved slot and the camera destroyed. On fire it also plays `PlayPickupGesture()` + a slot flash so the new photo is noticed. **Photo** (REQ-0017): activating it opens a **live, monochrome-sepia window centred on screen with a simple drawn frame** (`PhotoEnterHud` — one `SubViewport` `_vp` renders the captured pos/yaw with `Environment` saturation 0; a warm sepia overlay + procedural wood/brass border are drawn in `_Draw`; passing monsters show live; a 3D `polaroid_photo.glb` frame variant was tried, dropped, and the model removed); **holding W** while advancing grows the window from centre and teleports at `EnterDuration` 1.3333 s (1.5× shorter) (`UpdatePhotoEnter` → `Player.TeleportTo`, main pitch preserved) + sepia flash.
   - Requirements: `REQ-0011-inventory/`, `REQ-0012-base-item/` (+ sub-features `REQ-001{4,5,6}-...`), `REQ-0013-vintage-camera/`, `REQ-0017-photo/`. Not implemented: `Item` as `.tres` type registry, serialization, edge-screen activated indicator, photo thumbnail icon.

@@ -74,6 +74,7 @@ public partial class ChunkManager : Node3D
 		if (chunkData == null) return;
 
 		float cs = MazeData.CellWorldSize;
+		var kit = EnvironmentKitRegistry.Get(maze.RegionEnvironment);
 		var chunk = chunkScene.Instantiate<Chunk>();
 		chunk.Position = new Vector3(
 			chunkPos.X * ChunkSize * cs + maze.WorldOffsetX,
@@ -82,7 +83,7 @@ public partial class ChunkManager : Node3D
 		);
 		chunk.MeshLibrary = meshLibrary;
 		AddChild(chunk);
-		chunk.Setup(chunkPos, chunkData);
+		chunk.Setup(chunkPos, chunkData, kit);
 
 		GD.Print($"[ChunkManager] LOAD   chunk ({chunkPos.X},{chunkPos.Y})  " +
 			$"size={ChunkSize * cs:F0}x{ChunkSize * cs:F0}  " +
